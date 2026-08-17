@@ -1,14 +1,12 @@
 "use client";
 
 /**
- * app/history/page.tsx — History / All Items screen
+ * app/history/page.tsx — History / Log Archive screen
  *
- * PRD §11:
- *  - Filter chips: All / Pending / Done / Error
- *  - Search bar (filters by content)
- *  - Each card shows content + status + relative time
- *  - Expandable to show enrichment when status = done
- *  - Retry button on error items (FR-19)
+ * Technical Scratchpad Archive:
+ *  - Monospace filter chips (ALL, PENDING, ENRICHED, ERROR)
+ *  - Monospace search field
+ *  - Stream / Log list
  */
 
 import { useState, useMemo } from "react";
@@ -21,24 +19,22 @@ import { retryFailed } from "@/lib/process";
 type FilterChip = "all" | "pending" | "done" | "error";
 
 const CHIPS: { label: string; value: FilterChip }[] = [
-  { label: "All",     value: "all"     },
-  { label: "Pending", value: "pending" },
-  { label: "Done",    value: "done"    },
-  { label: "Error",   value: "error"   },
+  { label: "ALL",      value: "all"     },
+  { label: "PENDING",  value: "pending" },
+  { label: "ENRICHED", value: "done"    },
+  { label: "ERROR",    value: "error"   },
 ];
 
 export default function HistoryPage() {
   const [filter, setFilter] = useState<FilterChip>("all");
   const [search, setSearch]  = useState("");
 
-  // Live-reactive: re-renders automatically when DB changes
   const allItems = useLiveQuery(
     () => db.items.orderBy("created_at").reverse().toArray(),
     [],
     [] as Item[]
   );
 
-  // Client-side filter + search (data set is small for a personal tool)
   const displayItems = useMemo(() => {
     if (!allItems) return [];
     return allItems.filter((item) => {
@@ -58,18 +54,15 @@ export default function HistoryPage() {
 
   const errorCount = allItems?.filter((i) => i.status === "error").length ?? 0;
 
-  /** FR-19: Retry a single error item */
   const handleRetry = async (id: string) => {
     await updateItem(id, { status: "ready_to_process", error_message: null, synced: false });
     void syncToSupabase();
   };
 
-  /** Retry ALL error items */
   const handleRetryAll = async () => {
     await retryFailed();
   };
 
-  /** Delete item from both IndexedDB and Supabase */
   const handleDelete = async (id: string) => {
     await deleteItem(id);
     if (navigator.onLine) {
@@ -78,35 +71,29 @@ export default function HistoryPage() {
     }
   };
 
-  /** Mark done (FR-8: manually skip enrichment) */
   const handleMarkDone = async (id: string) => {
     await updateItem(id, { status: "done" as ItemStatus, synced: false });
     void syncToSupabase();
   };
 
   return (
-    <main className="bb-page" style={{ paddingBottom: "2rem" }}>
-      <div style={{ paddingTop: "0.75rem" }}>
+    <main className="bb-page" style={{ paddingBottom: "3rem" }}>
+      <div style={{ paddingTop: "1.25rem" }}>
         {/* Search */}
         <input
           id="history-search"
           type="search"
           className="bb-input"
-          placeholder="Search items…"
+          placeholder="SEARCH ARCHIVE BY CONTENT..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          style={{ fontSize: "0.95rem", padding: "0.7rem 1rem" }}
           aria-label="Search items"
         />
 
         {/* Filter chips */}
         <div
-          style={{
-            display: "flex",
-            gap: "0.5rem",
-            marginTop: "0.75rem",
-            flexWrap: "wrap",
-          }}
+          className="bb-chip-group"
+          style={{ marginTop: "0.875rem" }}
           role="group"
           aria-label="Filter by status"
         >
@@ -117,20 +104,21 @@ export default function HistoryPage() {
               onClick={() => setFilter(value)}
               aria-pressed={filter === value}
             >
-              {label}
+              [{label}]
             </button>
           ))}
 
           {errorCount > 0 && filter !== "error" && (
             <span
+              className="bb-mono"
               style={{
                 marginLeft: "auto",
-                fontSize: "0.78rem",
-                color: "var(--status-error)",
+                fontSize: "0.72rem",
+                color: "var(--red)",
                 alignSelf: "center",
               }}
             >
-              {errorCount} error{errorCount > 1 ? "s" : ""}
+              [{errorCount} ERRORS]
             </span>
           )}
         </div>
@@ -140,30 +128,32 @@ export default function HistoryPage() {
           <div style={{ marginTop: "0.75rem" }}>
             <button
               id="retry-all-btn"
-              className="bb-btn bb-btn-ghost"
-              style={{ fontSize: "0.82rem", padding: "0.4rem 0.875rem", minHeight: 36 }}
+              className="bb-btn bb-btn-danger"
+              style={{ fontSize: "0.75rem", padding: "0.3rem 0.65rem" }}
               onClick={handleRetryAll}
             >
-              ↺ Retry all {errorCount} failed item{errorCount > 1 ? "s" : ""}
+              ↺ RETRY ALL {errorCount} FAILED ITEMS
             </button>
           </div>
         )}
       </div>
 
-      {/* Items list */}
-      <div style={{ marginTop: "1rem" }}>
+      {/* Items Stream */}
+      <div style={{ marginTop: "1.25rem" }}>
         {allItems === undefined ? (
-          <p className="bb-empty">Loading…</p>
+          <div className="bb-empty">
+            <span className="bb-spinner" /> LOADING ARCHIVE...
+          </div>
         ) : displayItems.length === 0 ? (
-          <p className="bb-empty">
+          <div className="bb-empty">
             {search.trim()
-              ? `No items matching "${search}"`
+              ? `NO ENTRIES MATCHING "${search.toUpperCase()}"`
               : filter === "all"
-              ? "No items yet — head to Capture to add some."
-              : `No ${filter} items.`}
-          </p>
+              ? "NO LOG ENTRIES YET"
+              : `NO ${filter.toUpperCase()} ENTRIES`}
+          </div>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.625rem" }}>
+          <div className="bb-stream">
             {displayItems.map((item) => (
               <ItemCard
                 key={item.id}
@@ -178,17 +168,18 @@ export default function HistoryPage() {
         )}
 
         {allItems && displayItems.length > 0 && (
-          <p
+          <div
+            className="bb-mono"
             style={{
               textAlign: "center",
               color: "var(--text-dim)",
-              fontSize: "0.75rem",
+              fontSize: "0.72rem",
               marginTop: "1.5rem",
+              letterSpacing: "0.04em",
             }}
           >
-            {displayItems.length} item{displayItems.length !== 1 ? "s" : ""}
-            {filter !== "all" || search ? " shown" : " total"}
-          </p>
+            TOTAL DISPLAYED: {displayItems.length}
+          </div>
         )}
       </div>
     </main>

@@ -45,7 +45,7 @@ export async function syncToSupabase(): Promise<void> {
       if (!error) {
         await markSynced(item.id);
       } else {
-        console.error("[BrainBridge] Sync error for item", item.id, error);
+        console.error("[BrainBridge] Sync error for item", item.id, error.message || error);
       }
     }
   } finally {
@@ -69,7 +69,7 @@ export async function pollSupabaseUpdates(): Promise<void> {
     // Only poll items that might have changed status remotely
     const inFlight = await db.items
       .where("status")
-      .anyOf(["ready_to_process", "processing"])
+      .anyOf(["pending", "ready_to_process", "processing"])
       .toArray();
 
     if (inFlight.length === 0) return;

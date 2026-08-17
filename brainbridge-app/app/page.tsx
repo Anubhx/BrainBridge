@@ -3,18 +3,16 @@
 /**
  * app/page.tsx — Home / Capture screen
  *
- * PRD §11:
- *  - Large auto-focused input
- *  - Enter (without Shift) → save
- *  - Optimistic UI (item appears immediately)
- *  - Recent 10–20 items in chronological order (newest first)
- *  - Sticky "Process Now (N pending)" button
+ * Technical Scratchpad UI:
+ *  - Full-width notes widget (minimal chrome, text cursor focus)
+ *  - Stream / Log list for recent items (left border status accents)
+ *  - Direct human empty state ("Nothing captured yet — start typing")
+ *  - Contextual Process Now control (dimmed when 0, mono numeral counter)
  */
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { ItemCard } from "@/components/ItemCard";
 import {
-  db,
   createItem,
   getRecentItems,
   updateItem,
@@ -25,7 +23,7 @@ import { syncToSupabase, syncItemNow } from "@/lib/sync";
 import { processNow } from "@/lib/process";
 import { useLiveQuery } from "dexie-react-hooks";
 
-/** Toast notification (auto-dismisses) */
+/** Toast notification */
 function Toast({ message, onDone }: { message: string; onDone: () => void }) {
   useEffect(() => {
     const t = setTimeout(onDone, 2500);
@@ -41,9 +39,9 @@ export default function HomePage() {
   const [toast, setToast] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Live query: react to any DB changes automatically
+  // Live query: react to DB changes automatically
   const recentItems = useLiveQuery(
-    () => getRecentItems(20),
+    () => getRecentItems(25),
     [],
     [] as Item[]
   );
@@ -68,11 +66,10 @@ export default function HomePage() {
 
     try {
       const item = await createItem(content);
-      // Best-effort live sync — works if online; queued for background sync if not
       void syncItemNow(item).catch(() => void syncToSupabase());
     } catch (err) {
       console.error("[BrainBridge] Save error:", err);
-      showToast("Failed to save — please try again");
+      showToast("FAILED TO SAVE — TRY AGAIN");
     } finally {
       setSaving(false);
       textareaRef.current?.focus();
@@ -90,41 +87,38 @@ export default function HomePage() {
   /** Delete an item */
   const handleDelete = async (id: string) => {
     await deleteItem(id);
-    // Also remove from Supabase if online
     if (navigator.onLine) {
       const { supabase } = await import("@/lib/supabase");
       await supabase.from("items").delete().eq("id", id);
     }
-    showToast("Item deleted");
+    showToast("ITEM DELETED");
   };
 
-  /** Mark pending as done (skip enrichment) */
+  /** Mark pending as done */
   const handleMarkDone = async (id: string) => {
     await updateItem(id, { status: "done", synced: false });
     void syncToSupabase();
-    showToast("Marked as done");
+    showToast("MARKED AS DONE");
   };
 
-  /** Process Now — marks all pending as ready_to_process */
+  /** Process Now — marks pending items as ready_to_process */
   const handleProcessNow = async () => {
     if (processing || pendingCount === 0) return;
     setProcessing(true);
     try {
       const result = await processNow();
       if (result.count === 0) {
-        showToast("No pending items to process");
+        showToast("NO PENDING ITEMS TO PROCESS");
       } else if (result.failed === 0) {
         showToast(
-          `✓ ${result.count} item${result.count > 1 ? "s" : ""} queued (${result.code})`
+          `✓ QUEUED ${result.count} ITEM${result.count > 1 ? "S" : ""} [${result.code}]`
         );
       } else {
-        showToast(
-          `Queued locally — will sync when online (${result.code})`
-        );
+        showToast(`QUEUED LOCALLY [${result.code}]`);
       }
     } catch (err) {
       console.error(err);
-      showToast("Error — please try again");
+      showToast("PROCESSING ERROR — TRY AGAIN");
     } finally {
       setProcessing(false);
     }
@@ -132,68 +126,78 @@ export default function HomePage() {
 
   return (
     <main className="bb-page">
-      {/* Capture input */}
-      <section style={{ paddingTop: "0.75rem" }}>
+      {/* Scratchpad Capture Notes Widget */}
+      <section className="bb-notes-area">
+        <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", marginBottom: "0.6rem" }}>
+          <span className="bb-mono" style={{ color: "var(--amber)", fontSize: "0.85rem", fontWeight: 700 }}>
+            &gt;
+          </span>
+          <span className="bb-mono" style={{ color: "var(--text-muted)", fontSize: "0.75rem", letterSpacing: "0.04em", fontWeight: 600 }}>
+            CAPTURE RAW THOUGHT
+          </span>
+          <span className="bb-cursor" />
+        </div>
         <label htmlFor="capture-input" className="sr-only">
-          What&apos;s on your mind?
+          Capture raw thought
         </label>
         <textarea
           id="capture-input"
           ref={textareaRef}
-          className="bb-input"
+          className="bb-notes-input"
           rows={3}
-          placeholder="Capture a thought, topic, link, or task…"
+          placeholder="Type your thought, link, or note..."
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={handleKeyDown}
           disabled={saving}
           aria-label="Capture input. Press Enter to save."
         />
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "flex-end",
-            marginTop: "0.5rem",
-          }}
-        >
+        <div className="bb-notes-toolbar">
+          <span className="bb-notes-hint">
+            [↵ ENTER TO SAVE · SHIFT+ENTER FOR NEWLINE]
+          </span>
           <button
-            className="bb-btn"
+            className="bb-btn bb-btn-primary"
             onClick={handleSave}
             disabled={saving || !inputValue.trim()}
-            style={{ minWidth: 100 }}
             id="save-btn"
           >
-            {saving ? <span className="bb-spinner" /> : "Save"}
+            {saving ? <span className="bb-spinner" /> : "SAVE"}
           </button>
         </div>
-        <p style={{ color: "var(--text-dim)", fontSize: "0.75rem", marginTop: "0.35rem" }}>
-          ↵ Enter to save · Shift+Enter for newline
-        </p>
       </section>
 
-      {/* Recent items */}
-      <section style={{ flex: 1, marginTop: "1.25rem", paddingBottom: "8rem" }}>
-        <h2
+      {/* Stream / Log Section */}
+      <section style={{ flex: 1, marginTop: "1.5rem", paddingBottom: "8rem" }}>
+        <div
+          className="bb-mono"
           style={{
-            fontSize: "0.75rem",
-            fontWeight: 600,
-            letterSpacing: "0.08em",
-            textTransform: "uppercase",
-            color: "var(--text-dim)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
             marginBottom: "0.75rem",
+            fontSize: "0.72rem",
+            color: "var(--text-dim)",
+            letterSpacing: "0.05em",
           }}
         >
-          Recent
-        </h2>
+          <span>// RECENT STREAM</span>
+          {recentItems && recentItems.length > 0 && (
+            <span>COUNT: {recentItems.length}</span>
+          )}
+        </div>
 
         {recentItems === undefined ? (
-          <p className="bb-empty">Loading…</p>
+          <div className="bb-empty">
+            <span className="bb-spinner" />
+            <span style={{ marginLeft: "0.5rem" }}>LOADING STREAM...</span>
+          </div>
         ) : recentItems.length === 0 ? (
-          <p className="bb-empty">
-            Nothing yet. Type something above and press Enter ↵
-          </p>
+          <div className="bb-empty">
+            Nothing captured yet — start typing
+          </div>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.625rem" }}>
+          <div className="bb-stream">
             {recentItems.map((item) => (
               <ItemCard
                 key={item.id}
@@ -207,29 +211,29 @@ export default function HomePage() {
         )}
       </section>
 
-      {/* Sticky Process Now bar */}
+      {/* Contextual Process Now Control */}
       <div className="bb-process-bar">
         <button
           id="process-now-btn"
-          className="bb-btn"
-          style={{ width: "100%" }}
+          className={`bb-btn ${pendingCount > 0 ? "bb-btn-primary" : ""}`}
+          style={{ width: "100%", opacity: pendingCount === 0 ? 0.4 : 1 }}
           onClick={handleProcessNow}
           disabled={processing || pendingCount === 0}
-          aria-label={`Process Now — ${pendingCount} pending item${pendingCount !== 1 ? "s" : ""}`}
+          aria-label={`Process Now — ${pendingCount} pending items`}
         >
           {processing ? (
             <>
-              <span className="bb-spinner" /> Queuing…
+              <span className="bb-spinner" /> PROCESSING QUEUE...
             </>
           ) : pendingCount > 0 ? (
-            `Process Now (${pendingCount} pending)`
+            `PROCESS NOW [ ${pendingCount} PENDING ]`
           ) : (
-            "Process Now — nothing pending"
+            "PROCESS NOW [ 0 PENDING ]"
           )}
         </button>
       </div>
 
-      {/* Toast notification */}
+      {/* Toast Notification */}
       {toast && <Toast message={toast} onDone={() => setToast(null)} />}
     </main>
   );

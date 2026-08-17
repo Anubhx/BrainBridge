@@ -27,33 +27,35 @@ export function NavBar() {
           ✈ Offline — captures are saved locally and will sync when reconnected
         </div>
       )}
-      <div className="bb-page" style={{ padding: "0 1rem", maxWidth: "680px", margin: "0 auto" }}>
-        <nav className="bb-nav">
-          <span style={{ fontWeight: 700, fontSize: "1.05rem", letterSpacing: "-0.02em", color: "var(--text)" }}>
-            BrainBridge
-          </span>
-          <div className="bb-nav-links">
-            <Link
-              href="/"
-              className={`bb-nav-link${path === "/" ? " bb-nav-link--active" : ""}`}
-            >
-              Capture
+      <header className="bb-header">
+        <div style={{ maxWidth: "720px", margin: "0 auto", padding: "0 1.5rem", width: "100%" }}>
+          <nav className="bb-nav">
+            <Link href="/" className="bb-brand" style={{ textDecoration: "none" }}>
+              BRAINBRIDGE
             </Link>
-            <Link
-              href="/history"
-              className={`bb-nav-link${path === "/history" ? " bb-nav-link--active" : ""}`}
-            >
-              History
-            </Link>
-            <Link
-              href="/settings"
-              className={`bb-nav-link${path === "/settings" ? " bb-nav-link--active" : ""}`}
-            >
-              Settings
-            </Link>
-          </div>
-        </nav>
-      </div>
+            <div className="bb-nav-links">
+              <Link
+                href="/"
+                className={`bb-nav-link${path === "/" ? " bb-nav-link--active" : ""}`}
+              >
+                CAPTURE
+              </Link>
+              <Link
+                href="/history"
+                className={`bb-nav-link${path === "/history" ? " bb-nav-link--active" : ""}`}
+              >
+                HISTORY
+              </Link>
+              <Link
+                href="/settings"
+                className={`bb-nav-link${path === "/settings" ? " bb-nav-link--active" : ""}`}
+              >
+                SETTINGS
+              </Link>
+            </div>
+          </nav>
+        </div>
+      </header>
     </>
   );
 }
