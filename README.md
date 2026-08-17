@@ -138,39 +138,24 @@ The n8n workflow file is exported and ready at `brainbridge-app/BrainBridge - En
 ## 📁 Repository Structure
 
 ```
-BrainBridge/
-├── brainbridge-app/               # Next.js 15 PWA Application
-│   ├── app/
-│   │   ├── layout.tsx             # Root layout with Inter + JetBrains Mono
-│   │   ├── globals.css            # Technical Scratchpad CSS design system
-│   │   ├── page.tsx               # Capture screen (notes widget + stream log)
-│   │   ├── history/page.tsx       # Search & Filterable archive log
-│   │   └── settings/page.tsx      # System stats & maintenance controls
-│   ├── components/
-│   │   ├── ItemCard.tsx           # Stream log item with left border status accent
-│   │   ├── NavBar.tsx             # Uppercase monospace header navigation
-│   │   ├── StatusBadge.tsx        # Technical status dot & tag indicator
-│   │   └── SyncProvider.tsx       # Auto-sync & background polling listener
-│   ├── lib/
-│   │   ├── db.ts                  # Dexie.js IndexedDB schema (offline store)
-│   │   ├── supabase.ts            # Supabase client initializer
-│   │   ├── sync.ts                # Offline-first Dexie ↔ Supabase sync
-│   │   └── process.ts             # Process Now & Retry queue helpers
-│   ├── schema.sql                 # Supabase PostgreSQL schema
-│   ├── .env.example               # Environment variables template
-│   └── BrainBridge - Enrichment Pipeline.json  # n8n workflow export
-└── README.md
+brainbridge-app/
+├── app/
+│   ├── layout.tsx             # Root layout with Inter + JetBrains Mono
+│   ├── globals.css            # Technical Scratchpad CSS design system
+│   ├── page.tsx               # Capture screen (notes widget + stream log)
+│   ├── history/page.tsx       # Search & Filterable archive log
+│   └── settings/page.tsx      # System stats & maintenance controls
+├── components/
+│   ├── ItemCard.tsx           # Stream log item with left border status accent
+│   ├── NavBar.tsx             # Uppercase monospace header navigation
+│   ├── StatusBadge.tsx        # Technical status dot & tag indicator
+│   └── SyncProvider.tsx       # Auto-sync & background polling listener
+├── lib/
+│   ├── db.ts                  # Dexie.js IndexedDB schema (offline store)
+│   ├── supabase.ts            # Supabase client initializer
+│   ├── sync.ts                # Offline-first Dexie ↔ Supabase sync
+│   └── process.ts             # Process Now & Retry queue helpers
+├── schema.sql                 # Supabase PostgreSQL schema
+├── .env.example               # Environment variables template
+└── BrainBridge - Enrichment Pipeline.json  # n8n workflow export
 ```
-
----
-
-## 💰 Recurring Cost
-
-| Component | Provider / Tier | Monthly Cost |
-|---|---|---|
-| **PWA Web App** | Vercel (Hobby Tier) | **$0** |
-| **Database** | Supabase (Free Tier - 500 MB) | **$0** |
-| **AI Processing** | Google Gemini 3.1 Flash-Lite (Free Tier) | **$0** |
-| **Knowledge Store** | Notion API (Free) | **$0** |
-| **Workflow Engine** | n8n (Free Trial / Self-Hosted Docker) | **$0** |
-| **Total** | | **$0 / month** |
