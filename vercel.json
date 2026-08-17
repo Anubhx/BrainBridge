@@ -1,0 +1,5 @@
+{
+  "buildCommand": "cd brainbridge-app && npm run build",
+  "outputDirectory": "brainbridge-app/.next",
+  "installCommand": "cd brainbridge-app && npm install"
+}
