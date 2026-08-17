@@ -1,162 +1,161 @@
-# BrainBridge
+# 🧠 BrainBridge — Capture & AI Knowledge Enrichment
 
-A personal capture-and-enrich PWA. Capture thoughts in under 5 seconds. Enrich them with Gemini AI on demand via n8n. Store results in Notion.
-
-**Stack:** Next.js 15 · TypeScript · Tailwind · Dexie.js (IndexedDB) · Supabase (Postgres) · Serwist (PWA) · n8n (local Docker) · Gemini API · Notion
+**BrainBridge** is a personal, offline-first "Second Brain" quick-capture tool built to catch fast, fleeting thoughts in under 5 seconds and enrich them into structured, searchable knowledge via AI and Notion.
 
 ---
 
-## Architecture
+## ⚡ Concept & Design System
 
-```
-Phone/Browser (PWA, Vercel)
-  ↕ IndexedDB (Dexie)    — offline-first capture
-  ↕ Supabase Postgres    — cloud sync (anon key, RLS on)
+BrainBridge bridges the gap between a **raw scratchpad** on one end and a **structured knowledge system** on the other.
 
-n8n (your Windows laptop, Docker Desktop)
-  ↕ Supabase Postgres    — polls every 2-5 min (service-role key, never in frontend)
-  ↕ Gemini API           — enrichment
-  ↕ Notion API           — saves enriched pages
-```
-
-The PWA and n8n **never talk to each other directly**. They communicate only through Supabase rows. This means n8n doesn't need to be online when you capture — it just needs to be on when you want enrichment.
+- **Raw Thought vs. System Knowledge**:
+  - **Humanist Sans (`Inter`)**: Used exclusively for your raw captured thoughts.
+  - **Technical Monospace (`JetBrains Mono`)**: Used for all system metadata, timestamps (`14:20 • 2m ago`), status indicators, numeric counters, tags, and navigation.
+- **Functional Status Palette**:
+  - **Warm Charcoal (`#1C1B1A`)**: Deep warm graphite base (no pure black).
+  - **Warm Amber (`#E8A33D`)**: Signals pending & raw captures.
+  - **Cool Teal (`#5FA8A0`)**: Signals enriched knowledge & completed processing.
+  - **Muted Red (`#D9534F`)**: Signals system errors.
+- **Log Stream Architecture**:
+  - Captures are displayed as a continuous system log stream (`.bb-stream`) with a signature 3px left status border that shifts color dynamically from **Amber** (pending) to **Teal** (enriched).
+- **Restraint**: Zero gradients, zero drop-glows, zero rounded pills. Sharp **2px–4px radius max** across all elements.
 
 ---
 
-## Phase 1 Setup (required before running)
+## 🏗️ Architecture
 
-### 1. Create a Supabase project
+```
+[ PWA / Mobile / Desktop ]  ─── (Offline-First) ───►  [ IndexedDB (Dexie.js) ]
+          │                                                   │
+   (Background Sync)                                   (Local Instant Render)
+          ▼                                                   │
+ [ Supabase Postgres ] ◄──────────────────────────────────────┘
+          ▲
+          │ (Polls every 3 minutes)
+          ▼
+  [ n8n Workflow ] ──────► [ Gemini 3.1 Flash-Lite ] (AI Batch Summaries & Tags)
+          │
+          └──────────────► [ Notion Database ] (Saves Enriched Knowledge Pages)
+```
 
-Go to [supabase.com](https://supabase.com) → New project.
+> **Decoupled Architecture:** The Next.js frontend and n8n never communicate directly. They communicate asynchronously via Supabase rows. You can capture thoughts anytime offline or online, and n8n enriches them whenever it runs.
 
-In the **SQL Editor**, run the contents of `schema.sql` (in this directory).
+---
 
-From **Settings → API**, copy:
-- Project URL
-- `anon` public key
+## 🚀 Quick Start & Development
 
-### 2. Configure environment variables
+### 1. Prerequisites
+- Node.js 18+ & npm
+- A [Supabase](https://supabase.com) project (free tier)
+- A Google AI Studio API Key (for Gemini) & Notion Integration Token
+
+### 2. Environment Setup
+
+Inside `brainbridge-app/`, copy `.env.example` to `.env`:
 
 ```bash
-cp .env.example .env.local
+cd brainbridge-app
+cp .env.example .env
 ```
 
-Fill in `.env.local`:
-```
-NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
+Set your Supabase credentials in `brainbridge-app/.env`:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://<your-project-id>.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOi...
 ```
 
-> ⚠️ Never commit `.env.local`. It is already in `.gitignore`.
+### 3. Database Schema
 
-### 3. Run locally
+Run `brainbridge-app/schema.sql` in your **Supabase SQL Editor**:
+
+```sql
+create table if not exists items (
+  id                uuid primary key default gen_random_uuid(),
+  content           text not null,
+  created_at        timestamptz not null default now(),
+  updated_at        timestamptz not null default now(),
+  status            text not null default 'pending'
+                    check (status in ('pending','ready_to_process','processing','done','error')),
+  process_code      text,
+  enriched_summary  text,
+  enriched_links    jsonb,
+  tags              text[],
+  notion_page_id    text,
+  error_message     text,
+  source            text not null default 'pwa'
+);
+```
+
+### 4. Run Development Server
 
 ```bash
+cd brainbridge-app
 npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
-
-### 4. Deploy to Vercel
-
-1. Push `brainbridge-app/` to GitHub (or the whole repo — set **Root Directory** to `brainbridge-app` in Vercel project settings).
-2. Add the two env vars (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`) in Vercel → Settings → Environment Variables.
-3. Deploy.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ---
 
-## Phase 2 Setup (n8n enrichment — after Phase 1 works)
+## 🔄 n8n Pipeline Setup (Enrichment Engine)
 
-> See `../.agents/docs/n8n-workflow-notes.md` for the full node-by-node spec.
+The n8n workflow file is exported and ready at `brainbridge-app/BrainBridge - Enrichment Pipeline.json`.
 
-1. Start n8n: from the repo root on your Windows laptop:
-   ```powershell
-   docker compose up -d
+1. **Import Workflow**:
+   - Open n8n (Free Trial Cloud or Local Docker at `http://localhost:5678`).
+   - Go to **Workflows** → **Import from File** → Select `BrainBridge - Enrichment Pipeline.json`.
+
+2. **Configure Credentials in n8n**:
+   - **Supabase Account**: Base URL (`https://<project-id>.supabase.co`) & API Key.
+   - **Google Gemini API**: Free API Key from Google AI Studio.
+   - **Notion Account**: Notion Integration Token & connect your target Notion Database.
+
+3. **Activate**:
+   - Toggle the workflow switch to **Active**. n8n will automatically poll Supabase every 3 minutes for pending captures.
+
+---
+
+## 🌐 Deploying to Vercel
+
+1. Push your repository to GitHub:
+   ```bash
+   git add .
+   git commit -m "Deploy BrainBridge"
+   git push origin main
    ```
-   Open [http://localhost:5678](http://localhost:5678).
 
-2. Add a **Postgres credential** with your Supabase connection string using the **service-role** key (never the anon key).
-
-3. Add a **Gemini credential** (HTTP Header Auth with your Google AI Studio key).
-
-4. Build the workflow from the spec in `n8n-workflow-notes.md`.
-
-5. Activate it — it will poll Supabase every 2–5 minutes for `status = 'ready_to_process'` items.
+2. Go to [Vercel Dashboard](https://vercel.com/new) → **Import Project**.
+3. Set **Root Directory** to `brainbridge-app`.
+4. Add **Environment Variables**:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+5. Click **Deploy**.
 
 ---
 
-## How it works
-
-| Action | What happens |
-|--------|-------------|
-| Type + Enter | Saved instantly to IndexedDB → synced to Supabase when online |
-| Go offline → type | Saved to IndexedDB → syncs automatically when reconnected |
-| Tap "Process Now" | Items get `status=ready_to_process` + a `PROC-xxxxxx` code in Supabase |
-| n8n next polling run | Picks up ready items → calls Gemini → writes summary/links → sets `done` |
-| Open enriched item | Summary, links, tags, and Notion link visible in the card |
-
----
-
-## Item status flow
-
-```
-pending → ready_to_process → processing → done
-                                       ↘ error → (retry) → ready_to_process
-```
-
----
-
-## Cost
-
-| Service | Tier | Cost |
-|---------|------|------|
-| Vercel | Hobby (free) | $0 |
-| Supabase | Free (500 MB DB) | $0 |
-| Gemini API | Free tier (~1500 req/day) | $0 |
-| Notion API | Free | $0 |
-| n8n | Self-hosted on your laptop | $0 |
-
-**Total recurring cost: $0/month.**
-
----
-
-## Project structure
+## 📁 Repository Structure
 
 ```
 brainbridge-app/
 ├── app/
-│   ├── layout.tsx          # Root layout, PWA meta, NavBar
-│   ├── page.tsx            # Home / Capture screen
-│   ├── sw.ts               # Serwist service worker (compiled to public/sw.js)
-│   ├── history/
-│   │   └── page.tsx        # History screen (filter + search)
-│   └── settings/
-│       └── page.tsx        # Settings screen
+│   ├── layout.tsx             # Root layout with Inter + JetBrains Mono
+│   ├── globals.css            # Technical Scratchpad CSS design system
+│   ├── page.tsx               # Capture screen (notes widget + stream log)
+│   ├── history/page.tsx       # Search & Filterable archive log
+│   └── settings/page.tsx      # System stats & maintenance controls
 ├── components/
-│   ├── ItemCard.tsx        # Expandable item card
-│   ├── NavBar.tsx          # Top nav + offline banner
-│   ├── StatusBadge.tsx     # Coloured status pill
-│   └── SyncProvider.tsx    # Mounts sync + polling logic
+│   ├── ItemCard.tsx           # Stream log item with left border status accent
+│   ├── NavBar.tsx             # Uppercase monospace header navigation
+│   ├── StatusBadge.tsx        # Technical status dot & tag indicator
+│   └── SyncProvider.tsx       # Auto-sync & background polling listener
 ├── lib/
-│   ├── db.ts               # Dexie IndexedDB schema + helpers
-│   ├── supabase.ts         # Supabase client (anon key)
-│   ├── sync.ts             # IndexedDB → Supabase sync + polling
-│   └── process.ts          # Process Now / Retry logic
-├── public/
-│   ├── manifest.json       # PWA manifest
-│   ├── icon-192.svg        # PWA icon
-│   └── icon-512.svg        # PWA icon (large)
-├── schema.sql              # Run this in Supabase SQL editor
-├── .env.example            # Copy to .env.local and fill in values
-└── next.config.ts          # Serwist PWA integration
+│   ├── db.ts                  # Dexie.js IndexedDB schema (offline store)
+│   ├── supabase.ts            # Supabase client initializer
+│   ├── sync.ts                # Offline-first Dexie ↔ Supabase sync
+│   └── process.ts             # Process Now & Retry queue helpers
+├── schema.sql                 # Supabase PostgreSQL schema
+├── .env.example               # Environment variables template
+└── BrainBridge - Enrichment Pipeline.json  # n8n workflow export
 ```
-
----
-
-## Development notes
-
-- Service worker is **disabled in development** (`NODE_ENV=development`) to avoid caching headaches. It only activates in production builds.
-- Items are always written to **IndexedDB first**. Supabase is the sync target, not the primary store. Zero data loss even with no internet.
-- The anon key has **RLS enabled** with a permissive policy (single-user tool). Tighten this if you ever expose the app publicly.
-- No user authentication in Phase 1. The app is designed for personal, single-user use.
