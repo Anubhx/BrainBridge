@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * app/history/page.tsx — History / Log Archive screen
+ * app/history/page.tsx - History / Log Archive screen
  *
  * Technical Scratchpad Archive:
  *  - Monospace filter chips (ALL, PENDING, ENRICHED, ERROR)
@@ -19,15 +19,15 @@ import { retryFailed } from "@/lib/process";
 type FilterChip = "all" | "pending" | "done" | "error";
 
 const CHIPS: { label: string; value: FilterChip }[] = [
-  { label: "ALL",      value: "all"     },
-  { label: "PENDING",  value: "pending" },
-  { label: "ENRICHED", value: "done"    },
-  { label: "ERROR",    value: "error"   },
+  { label: "ALL", value: "all" },
+  { label: "PENDING", value: "pending" },
+  { label: "ENRICHED", value: "done" },
+  { label: "ERROR", value: "error" },
 ];
 
 export default function HistoryPage() {
   const [filter, setFilter] = useState<FilterChip>("all");
-  const [search, setSearch]  = useState("");
+  const [search, setSearch] = useState("");
 
   const allItems = useLiveQuery(
     () => db.items.orderBy("created_at").reverse().toArray(),
@@ -149,8 +149,8 @@ export default function HistoryPage() {
             {search.trim()
               ? `NO ENTRIES MATCHING "${search.toUpperCase()}"`
               : filter === "all"
-              ? "NO LOG ENTRIES YET"
-              : `NO ${filter.toUpperCase()} ENTRIES`}
+                ? "NO LOG ENTRIES YET"
+                : `NO ${filter.toUpperCase()} ENTRIES`}
           </div>
         ) : (
           <div className="bb-stream">

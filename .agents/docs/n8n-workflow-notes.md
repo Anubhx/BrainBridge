@@ -1,6 +1,6 @@
-# n8n Workflow Spec — BrainBridge Enrichment (Polling Mode)
+# n8n Workflow Spec - BrainBridge Enrichment (Polling Mode)
 
-Since n8n only runs while your laptop is on, polling is the default mode —
+Since n8n only runs while your laptop is on, polling is the default mode -
 no tunnel or public webhook required. Build this workflow in the n8n editor
 UI (http://localhost:5678).
 
@@ -9,7 +9,7 @@ UI (http://localhost:5678).
 1. **Schedule Trigger**
    - Interval: every 2–5 minutes.
 
-2. **Postgres/Supabase — Fetch ready items**
+2. **Postgres/Supabase - Fetch ready items**
    ```sql
    select * from items
    where status = 'ready_to_process'
@@ -18,7 +18,7 @@ UI (http://localhost:5678).
    ```
    - If 0 rows returned, use an **IF** node to stop the workflow here.
 
-3. **Postgres/Supabase — Mark as processing**
+3. **Postgres/Supabase - Mark as processing**
    ```sql
    update items
    set status = 'processing'
@@ -29,8 +29,8 @@ UI (http://localhost:5678).
 4. **Split into batches** (n8n "Split In Batches" node)
    - Batch size: 5–10 items (PRD §9).
 
-5. **HTTP Request — Gemini**
-   - Model: `gemini-2.0-flash-lite` (or latest free Flash-Lite — verify
+5. **HTTP Request - Gemini**
+   - Model: `gemini-2.0-flash-lite` (or latest free Flash-Lite - verify
      current model name in Google AI Studio before wiring this up, names
      change).
    - System prompt: use PRD §9 verbatim, unmodified.
@@ -38,20 +38,20 @@ UI (http://localhost:5678).
    - Request `responseMimeType: application/json` if the Gemini API
      supports it for your model, to reduce parsing errors.
 
-6. **Code node — Parse response**
+6. **Code node - Parse response**
    - Parse the JSON array from Gemini.
    - Validate each object has `id`, `summary`, `links`, `tags`,
      `confidence`. Anything malformed → route to the error branch (step 9)
      for that item only, don't fail the whole batch.
 
-7. **Notion node — Create/Update page**
+7. **Notion node - Create/Update page**
    - One item per iteration (use a "Split Out" / loop node over the parsed
      array).
    - Map: `summary` → page property/body, `links` → property or child
      blocks, `tags` → multi-select property, `confidence` → select property.
    - Capture the returned Notion page ID.
 
-8. **Postgres/Supabase — Write back success**
+8. **Postgres/Supabase - Write back success**
    ```sql
    update items
    set status = 'done',
@@ -103,4 +103,4 @@ mid-batch or your laptop sleeps.
 Swap the Schedule Trigger for a Webhook node, and have the PWA's "Process
 Now" action POST the process code to it. You'll need Cloudflare Tunnel or
 ngrok pointed at `localhost:5678` so Vercel can reach your laptop. Not
-needed for Phase 1/2 — polling covers the MVP fully.
+needed for Phase 1/2 - polling covers the MVP fully.

@@ -10,12 +10,12 @@ export function NavBar() {
 
   useEffect(() => {
     setOffline(!navigator.onLine);
-    const on  = () => setOffline(false);
+    const on = () => setOffline(false);
     const off = () => setOffline(true);
-    window.addEventListener("online",  on);
+    window.addEventListener("online", on);
     window.addEventListener("offline", off);
     return () => {
-      window.removeEventListener("online",  on);
+      window.removeEventListener("online", on);
       window.removeEventListener("offline", off);
     };
   }, []);
@@ -24,7 +24,7 @@ export function NavBar() {
     <>
       {offline && (
         <div className="bb-offline-banner" role="status" aria-live="polite">
-          ✈ Offline — captures are saved locally and will sync when reconnected
+          ✈ Offline - captures are saved locally and will sync when reconnected
         </div>
       )}
       <header className="bb-header">

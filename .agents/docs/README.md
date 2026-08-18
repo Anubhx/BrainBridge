@@ -25,7 +25,7 @@ n8n-workflow-notes.md       Node-by-node n8n workflow spec (polling mode)
                                                     [Gemini]  [Notion]
 ```
 
-The frontend and n8n never talk to each other directly — both just read/write
+The frontend and n8n never talk to each other directly - both just read/write
 Supabase. That's deliberate: n8n only runs while your laptop is on, so
 polling (not webhooks) is the default and nothing needs to be publicly
 reachable.

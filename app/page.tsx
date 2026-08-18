@@ -1,12 +1,12 @@
 "use client";
 
 /**
- * app/page.tsx — Home / Capture screen
+ * app/page.tsx - Home / Capture screen
  *
  * Technical Scratchpad UI:
  *  - Full-width notes widget (minimal chrome, text cursor focus)
  *  - Stream / Log list for recent items (left border status accents)
- *  - Direct human empty state ("Nothing captured yet — start typing")
+ *  - Direct human empty state ("Nothing captured yet - start typing")
  *  - Contextual Process Now control (dimmed when 0, mono numeral counter)
  */
 
@@ -56,7 +56,7 @@ export default function HomePage() {
 
   const showToast = (msg: string) => setToast(msg);
 
-  /** Save item — optimistic: IndexedDB first, then sync to Supabase */
+  /** Save item - optimistic: IndexedDB first, then sync to Supabase */
   const handleSave = useCallback(async () => {
     const content = inputValue.trim();
     if (!content || saving) return;
@@ -69,7 +69,7 @@ export default function HomePage() {
       void syncItemNow(item).catch(() => void syncToSupabase());
     } catch (err) {
       console.error("[BrainBridge] Save error:", err);
-      showToast("FAILED TO SAVE — TRY AGAIN");
+      showToast("FAILED TO SAVE - TRY AGAIN");
     } finally {
       setSaving(false);
       textareaRef.current?.focus();
@@ -101,7 +101,7 @@ export default function HomePage() {
     showToast("MARKED AS DONE");
   };
 
-  /** Process Now — marks pending items as ready_to_process */
+  /** Process Now - marks pending items as ready_to_process */
   const handleProcessNow = async () => {
     if (processing || pendingCount === 0) return;
     setProcessing(true);
@@ -118,7 +118,7 @@ export default function HomePage() {
       }
     } catch (err) {
       console.error(err);
-      showToast("PROCESSING ERROR — TRY AGAIN");
+      showToast("PROCESSING ERROR - TRY AGAIN");
     } finally {
       setProcessing(false);
     }
@@ -194,7 +194,7 @@ export default function HomePage() {
           </div>
         ) : recentItems.length === 0 ? (
           <div className="bb-empty">
-            Nothing captured yet — start typing
+            Nothing captured yet - start typing
           </div>
         ) : (
           <div className="bb-stream">
@@ -219,7 +219,7 @@ export default function HomePage() {
           style={{ width: "100%", opacity: pendingCount === 0 ? 0.4 : 1 }}
           onClick={handleProcessNow}
           disabled={processing || pendingCount === 0}
-          aria-label={`Process Now — ${pendingCount} pending items`}
+          aria-label={`Process Now - ${pendingCount} pending items`}
         >
           {processing ? (
             <>

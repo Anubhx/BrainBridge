@@ -1,5 +1,5 @@
 /**
- * lib/db.ts — Dexie.js IndexedDB wrapper
+ * lib/db.ts - Dexie.js IndexedDB wrapper
  *
  * This mirrors the Supabase `items` table exactly so rows can be
  * synced bidirectionally. One extra field `synced` tracks whether
@@ -21,7 +21,7 @@ export interface EnrichedLink {
 }
 
 export interface Item {
-  /** UUID — generated client-side via crypto.randomUUID() */
+  /** UUID - generated client-side via crypto.randomUUID() */
   id: string;
   content: string;
   created_at: string; // ISO 8601

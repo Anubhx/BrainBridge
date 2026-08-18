@@ -17,7 +17,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "BrainBridge — Capture & Enrich",
+  title: "BrainBridge - Capture & Enrich",
   description:
     "Capture thoughts instantly. Enrich them with AI on demand. Offline-first PWA.",
   manifest: "/manifest.json",

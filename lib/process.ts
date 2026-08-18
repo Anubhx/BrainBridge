@@ -1,5 +1,5 @@
 /**
- * lib/process.ts — "Process Now" logic
+ * lib/process.ts - "Process Now" logic
  *
  * FR-10: When the user taps "Process Now":
  *  1. Generate a short, unguessable process code (PROC-xxxxxx).

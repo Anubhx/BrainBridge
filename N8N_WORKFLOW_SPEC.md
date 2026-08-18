@@ -1,4 +1,4 @@
-# Phase 2 — n8n + Gemini Workflow Specification
+# Phase 2 - n8n + Gemini Workflow Specification
 
 This document contains the step-by-step guide to setting up the **BrainBridge AI Enrichment & Notion Sync** workflow in n8n (running locally via Docker on `http://localhost:5678`).
 
@@ -31,7 +31,7 @@ Before adding nodes, configure the following 3 credentials in **n8n → Credenti
 
 ---
 
-## 2. Main Workflow — Node-by-Node Setup
+## 2. Main Workflow - Node-by-Node Setup
 
 ```
 [Schedule Trigger] 

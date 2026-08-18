@@ -38,7 +38,7 @@ create trigger trg_items_updated_at
 before update on items
 for each row execute function set_updated_at();
 
--- Optional table (PRD 8) — only needed if you want trigger codes
+-- Optional table (PRD 8) - only needed if you want trigger codes
 -- tracked separately from items instead of stored inline.
 create table if not exists triggers (
   id          uuid primary key default gen_random_uuid(),

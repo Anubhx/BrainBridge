@@ -1,5 +1,5 @@
 /**
- * lib/sync.ts — Background sync: IndexedDB → Supabase
+ * lib/sync.ts - Background sync: IndexedDB → Supabase
  *
  * Design:
  *  - Items are always written to Dexie (IndexedDB) first. This guarantees
@@ -21,7 +21,7 @@ let syncInProgress = false;
 
 /**
  * Push all unsynced local items to Supabase.
- * Safe to call multiple times concurrently — a lock prevents double-sends.
+ * Safe to call multiple times concurrently - a lock prevents double-sends.
  */
 export async function syncToSupabase(): Promise<void> {
   if (syncInProgress) return;

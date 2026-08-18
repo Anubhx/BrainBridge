@@ -1,8 +1,8 @@
 /**
- * lib/supabase.ts — Supabase client singleton
+ * lib/supabase.ts - Supabase client singleton
  *
  * Uses the anon key (safe for client-side) as read by NEXT_PUBLIC_ env vars.
- * The service-role key NEVER goes here — it lives only in n8n on your laptop.
+ * The service-role key NEVER goes here - it lives only in n8n on your laptop.
  *
  * Set these in .env.local (never commit that file):
  *   NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
@@ -19,7 +19,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
   // Won't throw during build; only at runtime when the env vars are missing.
   console.warn(
     "[BrainBridge] Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY. " +
-      "Copy .env.example to .env.local and fill in your Supabase project values."
+    "Copy .env.example to .env.local and fill in your Supabase project values."
   );
 }
 

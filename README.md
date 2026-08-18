@@ -1,4 +1,4 @@
-# 🧠 BrainBridge — Capture & AI Knowledge Enrichment
+# 🧠 BrainBridge - Capture & AI Knowledge Enrichment
 
 **BrainBridge** is a personal, offline-first "Second Brain" quick-capture tool built to catch fast, fleeting thoughts in under 5 seconds and enrich them into structured, searchable knowledge via AI and Notion.
 

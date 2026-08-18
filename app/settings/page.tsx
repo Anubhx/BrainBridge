@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * app/settings/page.tsx — System Settings & Diagnostics
+ * app/settings/page.tsx - System Settings & Diagnostics
  *
  * Technical Scratchpad Settings:
  *  - System Status Counters
@@ -36,7 +36,7 @@ function Row({ label, value }: { label: string; value: string | number }) {
 
 export default function SettingsPage() {
   const [clearing, setClearing] = useState(false);
-  const [toast, setToast]       = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
 
   const allItems = useLiveQuery(
     () => db.items.toArray(),
@@ -45,13 +45,13 @@ export default function SettingsPage() {
   );
 
   const counts = {
-    total:      allItems?.length ?? 0,
-    pending:    allItems?.filter((i) => i.status === "pending").length ?? 0,
-    queued:     allItems?.filter((i) => i.status === "ready_to_process").length ?? 0,
+    total: allItems?.length ?? 0,
+    pending: allItems?.filter((i) => i.status === "pending").length ?? 0,
+    queued: allItems?.filter((i) => i.status === "ready_to_process").length ?? 0,
     processing: allItems?.filter((i) => i.status === "processing").length ?? 0,
-    done:       allItems?.filter((i) => i.status === "done").length ?? 0,
-    error:      allItems?.filter((i) => i.status === "error").length ?? 0,
-    unsynced:   allItems?.filter((i) => !i.synced).length ?? 0,
+    done: allItems?.filter((i) => i.status === "done").length ?? 0,
+    error: allItems?.filter((i) => i.status === "error").length ?? 0,
+    unsynced: allItems?.filter((i) => !i.synced).length ?? 0,
   };
 
   const show = (msg: string) => {
@@ -89,7 +89,7 @@ export default function SettingsPage() {
 
   const handleForceSync = async () => {
     if (!navigator.onLine) {
-      show("OFFLINE — SYNC WILL RESUME WHEN RECONNECTED");
+      show("OFFLINE - SYNC WILL RESUME WHEN RECONNECTED");
       return;
     }
     await syncToSupabase();
@@ -143,13 +143,13 @@ export default function SettingsPage() {
           <div className="bb-mono" style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--text-dim)", marginBottom: "0.5rem" }}>
             // LOCAL INDEXEDDB STATS
           </div>
-          <Row label="TOTAL ITEMS"            value={counts.total} />
-          <Row label="PENDING (RAW)"          value={counts.pending} />
-          <Row label="QUEUED"                 value={counts.queued} />
-          <Row label="PROCESSING"             value={counts.processing} />
-          <Row label="ENRICHED (DONE)"        value={counts.done} />
-          <Row label="ERROR"                  value={counts.error} />
-          <Row label="UNSYNCED (LOCAL ONLY)"  value={counts.unsynced} />
+          <Row label="TOTAL ITEMS" value={counts.total} />
+          <Row label="PENDING (RAW)" value={counts.pending} />
+          <Row label="QUEUED" value={counts.queued} />
+          <Row label="PROCESSING" value={counts.processing} />
+          <Row label="ENRICHED (DONE)" value={counts.done} />
+          <Row label="ERROR" value={counts.error} />
+          <Row label="UNSYNCED (LOCAL ONLY)" value={counts.unsynced} />
         </section>
 
         {/* System Maintenance */}
