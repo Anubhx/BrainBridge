@@ -1,240 +1,161 @@
 "use client";
 
-/**
- * app/page.tsx - Home / Capture screen
- *
- * Technical Scratchpad UI:
- *  - Full-width notes widget (minimal chrome, text cursor focus)
- *  - Stream / Log list for recent items (left border status accents)
- *  - Direct human empty state ("Nothing captured yet - start typing")
- *  - Contextual Process Now control (dimmed when 0, mono numeral counter)
- */
+import Link from "next/link";
+import { useEffect, useRef } from "react";
 
-import { useState, useEffect, useRef, useCallback } from "react";
-import { ItemCard } from "@/components/ItemCard";
-import {
-  createItem,
-  getRecentItems,
-  updateItem,
-  deleteItem,
-  type Item,
-} from "@/lib/db";
-import { syncToSupabase, syncItemNow } from "@/lib/sync";
-import { processNow } from "@/lib/process";
-import { useLiveQuery } from "dexie-react-hooks";
+export default function LandingPage() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
-/** Toast notification */
-function Toast({ message, onDone }: { message: string; onDone: () => void }) {
+  // Subtle animated grid background
   useEffect(() => {
-    const t = setTimeout(onDone, 2500);
-    return () => clearTimeout(t);
-  }, [onDone]);
-  return <div className="bb-toast" role="status">{message}</div>;
-}
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
 
-export default function HomePage() {
-  const [inputValue, setInputValue] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [processing, setProcessing] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const resize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+    resize();
+    window.addEventListener("resize", resize);
 
-  // Live query: react to DB changes automatically
-  const recentItems = useLiveQuery(
-    () => getRecentItems(25),
-    [],
-    [] as Item[]
-  );
+    let frame = 0;
+    let raf: number;
 
-  const pendingCount =
-    recentItems?.filter((i) => i.status === "pending").length ?? 0;
+    const draw = () => {
+      frame++;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const gridSize = 48;
+      const cols = Math.ceil(canvas.width / gridSize) + 1;
+      const rows = Math.ceil(canvas.height / gridSize) + 1;
 
-  // Auto-focus on mount
-  useEffect(() => {
-    textareaRef.current?.focus();
+      ctx.strokeStyle = "rgba(56, 54, 51, 0.6)";
+      ctx.lineWidth = 0.5;
+
+      for (let x = 0; x < cols; x++) {
+        for (let y = 0; y < rows; y++) {
+          const px = x * gridSize;
+          const py = y * gridSize;
+          const pulse =
+            Math.sin(frame * 0.012 + x * 0.3 + y * 0.3) * 0.5 + 0.5;
+          ctx.globalAlpha = 0.1 + pulse * 0.08;
+          ctx.beginPath();
+          ctx.arc(px, py, 1, 0, Math.PI * 2);
+          ctx.fillStyle = "#E8A33D";
+          ctx.fill();
+        }
+      }
+
+      ctx.globalAlpha = 1;
+      raf = requestAnimationFrame(draw);
+    };
+    draw();
+
+    return () => {
+      window.removeEventListener("resize", resize);
+      cancelAnimationFrame(raf);
+    };
   }, []);
 
-  const showToast = (msg: string) => setToast(msg);
-
-  /** Save item - optimistic: IndexedDB first, then sync to Supabase */
-  const handleSave = useCallback(async () => {
-    const content = inputValue.trim();
-    if (!content || saving) return;
-
-    setSaving(true);
-    setInputValue("");
-
-    try {
-      const item = await createItem(content);
-      void syncItemNow(item).catch(() => void syncToSupabase());
-    } catch (err) {
-      console.error("[BrainBridge] Save error:", err);
-      showToast("FAILED TO SAVE - TRY AGAIN");
-    } finally {
-      setSaving(false);
-      textareaRef.current?.focus();
-    }
-  }, [inputValue, saving]);
-
-  /** Enter (without Shift) triggers save */
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      void handleSave();
-    }
-  };
-
-  /** Delete an item */
-  const handleDelete = async (id: string) => {
-    await deleteItem(id);
-    if (navigator.onLine) {
-      const { supabase } = await import("@/lib/supabase");
-      await supabase.from("items").delete().eq("id", id);
-    }
-    showToast("ITEM DELETED");
-  };
-
-  /** Mark pending as done */
-  const handleMarkDone = async (id: string) => {
-    await updateItem(id, { status: "done", synced: false });
-    void syncToSupabase();
-    showToast("MARKED AS DONE");
-  };
-
-  /** Process Now - marks pending items as ready_to_process */
-  const handleProcessNow = async () => {
-    if (processing || pendingCount === 0) return;
-    setProcessing(true);
-    try {
-      const result = await processNow();
-      if (result.count === 0) {
-        showToast("NO PENDING ITEMS TO PROCESS");
-      } else if (result.failed === 0) {
-        showToast(
-          `✓ QUEUED ${result.count} ITEM${result.count > 1 ? "S" : ""} [${result.code}]`
-        );
-      } else {
-        showToast(`QUEUED LOCALLY [${result.code}]`);
-      }
-    } catch (err) {
-      console.error(err);
-      showToast("PROCESSING ERROR - TRY AGAIN");
-    } finally {
-      setProcessing(false);
-    }
-  };
-
   return (
-    <main className="bb-page">
-      {/* Scratchpad Capture Notes Widget */}
-      <section className="bb-notes-area">
-        <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", marginBottom: "0.6rem" }}>
-          <span className="bb-mono" style={{ color: "var(--amber)", fontSize: "0.85rem", fontWeight: 700 }}>
-            &gt;
-          </span>
-          <span className="bb-mono" style={{ color: "var(--text-muted)", fontSize: "0.75rem", letterSpacing: "0.04em", fontWeight: 600 }}>
-            CAPTURE RAW THOUGHT
-          </span>
-          <span className="bb-cursor" />
-        </div>
-        <label htmlFor="capture-input" className="sr-only">
-          Capture raw thought
-        </label>
-        <textarea
-          id="capture-input"
-          ref={textareaRef}
-          className="bb-notes-input"
-          rows={3}
-          placeholder="Type your thought, link, or note..."
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-          onKeyDown={handleKeyDown}
-          disabled={saving}
-          aria-label="Capture input. Press Enter to save."
-        />
-        <div className="bb-notes-toolbar">
-          <span className="bb-notes-hint">
-            [↵ ENTER TO SAVE · SHIFT+ENTER FOR NEWLINE]
-          </span>
-          <button
-            className="bb-btn bb-btn-primary"
-            onClick={handleSave}
-            disabled={saving || !inputValue.trim()}
-            id="save-btn"
-          >
-            {saving ? <span className="bb-spinner" /> : "SAVE"}
-          </button>
-        </div>
-      </section>
+    <div className="bb-landing">
+      <canvas ref={canvasRef} className="bb-landing-canvas" aria-hidden="true" />
 
-      {/* Stream / Log Section */}
-      <section style={{ flex: 1, marginTop: "1.5rem", paddingBottom: "8rem" }}>
-        <div
-          className="bb-mono"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginBottom: "0.75rem",
-            fontSize: "0.72rem",
-            color: "var(--text-dim)",
-            letterSpacing: "0.05em",
-          }}
-        >
-          <span>// RECENT STREAM</span>
-          {recentItems && recentItems.length > 0 && (
-            <span>COUNT: {recentItems.length}</span>
-          )}
+      {/* Nav */}
+      <header className="bb-landing-nav">
+        <span className="bb-brand">BrainBridge</span>
+        <div className="bb-landing-nav-actions">
+          <Link href="/sign-in" className="bb-btn bb-btn-ghost">
+            Sign In
+          </Link>
+          <Link href="/sign-up" className="bb-btn bb-btn-primary">
+            Get Started
+          </Link>
+        </div>
+      </header>
+
+      {/* Hero */}
+      <main className="bb-landing-hero">
+        <div className="bb-landing-badge">
+          <span className="bb-status-dot bb-status-dot--processing" />
+          <span className="bb-mono" style={{ fontSize: "0.72rem", color: "var(--amber)", letterSpacing: "0.08em", textTransform: "uppercase" }}>
+            V2 · AI Knowledge System
+          </span>
         </div>
 
-        {recentItems === undefined ? (
-          <div className="bb-empty">
-            <span className="bb-spinner" />
-            <span style={{ marginLeft: "0.5rem" }}>LOADING STREAM...</span>
-          </div>
-        ) : recentItems.length === 0 ? (
-          <div className="bb-empty">
-            Nothing captured yet - start typing
-          </div>
-        ) : (
-          <div className="bb-stream">
-            {recentItems.map((item) => (
-              <ItemCard
-                key={item.id}
-                item={item}
-                onDelete={handleDelete}
-                onMarkDone={handleMarkDone}
-                showActions
-              />
-            ))}
-          </div>
-        )}
-      </section>
+        <h1 className="bb-landing-title">
+          Capture the thought.
+          <br />
+          <span className="bb-landing-title-accent">Let AI build the knowledge.</span>
+        </h1>
 
-      {/* Contextual Process Now Control */}
-      <div className="bb-process-bar">
-        <button
-          id="process-now-btn"
-          className={`bb-btn ${pendingCount > 0 ? "bb-btn-primary" : ""}`}
-          style={{ width: "100%", opacity: pendingCount === 0 ? 0.4 : 1 }}
-          onClick={handleProcessNow}
-          disabled={processing || pendingCount === 0}
-          aria-label={`Process Now - ${pendingCount} pending items`}
-        >
-          {processing ? (
-            <>
-              <span className="bb-spinner" /> PROCESSING QUEUE...
-            </>
-          ) : pendingCount > 0 ? (
-            `PROCESS NOW [ ${pendingCount} PENDING ]`
-          ) : (
-            "PROCESS NOW [ 0 PENDING ]"
-          )}
-        </button>
-      </div>
+        <p className="bb-landing-desc">
+          BrainBridge is a second-brain capture tool. Type a raw idea — quick,
+          deep, or research-grade — and a multi-agent AI pipeline turns it into
+          structured knowledge in your Notion workspace.
+        </p>
 
-      {/* Toast Notification */}
-      {toast && <Toast message={toast} onDone={() => setToast(null)} />}
-    </main>
+        <div className="bb-landing-cta">
+          <Link href="/sign-up" className="bb-btn bb-btn-primary bb-btn-lg">
+            Open Your Second Brain →
+          </Link>
+          <Link href="/sign-in" className="bb-btn bb-btn-ghost">
+            Already have an account
+          </Link>
+        </div>
+
+        {/* Feature grid */}
+        <div className="bb-landing-features">
+          <div className="bb-landing-feature">
+            <span className="bb-landing-feature-icon">⚡</span>
+            <div>
+              <div className="bb-landing-feature-title">3 Depth Modes</div>
+              <div className="bb-landing-feature-desc">
+                Quick capture, Deep analysis, or full Research reports — choose
+                per note.
+              </div>
+            </div>
+          </div>
+          <div className="bb-landing-feature">
+            <span className="bb-landing-feature-icon">🤖</span>
+            <div>
+              <div className="bb-landing-feature-title">Multi-Agent AI</div>
+              <div className="bb-landing-feature-desc">
+                Gemini + Mistral-7B + Llama 3.2 work in sequence to enrich every
+                thought.
+              </div>
+            </div>
+          </div>
+          <div className="bb-landing-feature">
+            <span className="bb-landing-feature-icon">📱</span>
+            <div>
+              <div className="bb-landing-feature-title">Instagram / URL Aware</div>
+              <div className="bb-landing-feature-desc">
+                Paste a reel or article link — AI reads and contextualises the
+                content for you.
+              </div>
+            </div>
+          </div>
+          <div className="bb-landing-feature">
+            <span className="bb-landing-feature-icon">🔒</span>
+            <div>
+              <div className="bb-landing-feature-title">Private by Default</div>
+              <div className="bb-landing-feature-desc">
+                Works offline-first. All data lives in your Supabase and Notion,
+                under your control.
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      {/* Footer */}
+      <footer className="bb-landing-footer">
+        <span className="bb-mono" style={{ color: "var(--text-dim)", fontSize: "0.72rem" }}>
+          BrainBridge · Personal AI Knowledge System · $0/month
+        </span>
+      </footer>
+    </div>
   );
 }

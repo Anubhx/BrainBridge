@@ -3,10 +3,15 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
+import { useClerk, useUser } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
 
 export function NavBar() {
   const path = usePathname();
   const [offline, setOffline] = useState(false);
+  const { signOut } = useClerk();
+  const { user } = useUser();
+  const router = useRouter();
 
   useEffect(() => {
     setOffline(!navigator.onLine);
@@ -20,23 +25,28 @@ export function NavBar() {
     };
   }, []);
 
+  const handleSignOut = async () => {
+    await signOut();
+    router.push("/");
+  };
+
   return (
     <>
       {offline && (
         <div className="bb-offline-banner" role="status" aria-live="polite">
-          ✈ Offline - captures are saved locally and will sync when reconnected
+          ✈ Offline — captures saved locally, sync on reconnect
         </div>
       )}
       <header className="bb-header">
         <div style={{ maxWidth: "720px", margin: "0 auto", padding: "0 1.5rem", width: "100%" }}>
           <nav className="bb-nav">
-            <Link href="/" className="bb-brand" style={{ textDecoration: "none" }}>
+            <Link href="/dashboard" className="bb-brand" style={{ textDecoration: "none" }}>
               BRAINBRIDGE
             </Link>
             <div className="bb-nav-links">
               <Link
-                href="/"
-                className={`bb-nav-link${path === "/" ? " bb-nav-link--active" : ""}`}
+                href="/dashboard"
+                className={`bb-nav-link${path === "/dashboard" ? " bb-nav-link--active" : ""}`}
               >
                 CAPTURE
               </Link>
@@ -52,6 +62,16 @@ export function NavBar() {
               >
                 SETTINGS
               </Link>
+              {user && (
+                <button
+                  onClick={handleSignOut}
+                  className="bb-nav-link"
+                  style={{ background: "none", border: "none", cursor: "pointer" }}
+                  title={`Signed in as ${user.primaryEmailAddress?.emailAddress}`}
+                >
+                  EXIT
+                </button>
+              )}
             </div>
           </nav>
         </div>

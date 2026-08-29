@@ -1,8 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
-import { SyncProvider } from "@/components/SyncProvider";
-import { NavBar } from "@/components/NavBar";
+import { ClerkProvider } from "@clerk/nextjs";
+import { AuthNavWrapper } from "@/components/AuthNavWrapper";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -17,9 +17,9 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "BrainBridge - Capture & Enrich",
+  title: "BrainBridge — Personal AI Knowledge System",
   description:
-    "Capture thoughts instantly. Enrich them with AI on demand. Offline-first PWA.",
+    "Capture thoughts instantly. Enrich them with multi-agent AI. Your personal second brain — offline-first PWA.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
@@ -49,13 +49,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`}>
-      <body>
-        <SyncProvider>
-          <NavBar />
-          {children}
-        </SyncProvider>
-      </body>
-    </html>
+    <ClerkProvider>
+      <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`}>
+        <body>
+          <AuthNavWrapper>
+            {children}
+          </AuthNavWrapper>
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }
