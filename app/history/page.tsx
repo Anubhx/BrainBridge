@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * app/history/page.tsx - History / Log Archive screen (V2 Pipeline)
+ * app/history/page.tsx - History / Log Archive screen
  *
  * Technical Scratchpad Archive:
  *  - Status filter chips (ALL, PENDING, ENRICHED, ERROR)

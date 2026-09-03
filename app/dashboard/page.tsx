@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * app/dashboard/page.tsx - Capture workspace (protected route V2)
+ * app/dashboard/page.tsx - Capture workspace (protected route)
  * 
  * The core BrainBridge capture UI with DepthSelector (Quick, Deep, Research)
  * and multi-agent background enrichment.

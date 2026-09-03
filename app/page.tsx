@@ -93,7 +93,7 @@ export default function LandingPage() {
         <div className="bb-landing-badge">
           <span className="bb-status-dot bb-status-dot--processing" />
           <span className="bb-mono" style={{ fontSize: "0.72rem", color: "var(--amber)", letterSpacing: "0.08em", textTransform: "uppercase" }}>
-            V2 · AI Knowledge System
+            AI Knowledge System
           </span>
         </div>
 

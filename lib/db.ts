@@ -1,5 +1,5 @@
 /**
- * lib/db.ts - Dexie.js IndexedDB wrapper (V2 Schema)
+ * lib/db.ts - Dexie.js IndexedDB wrapper
  *
  * This mirrors the Supabase `items` table exactly so rows can be
  * synced bidirectionally. One extra field `synced` tracks whether

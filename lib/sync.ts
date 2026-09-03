@@ -1,5 +1,5 @@
 /**
- * lib/sync.ts - Background sync: IndexedDB → Supabase (V2 Pipeline)
+ * lib/sync.ts - Background sync: IndexedDB → Supabase
  *
  * Design:
  *  - Items are always written to Dexie (IndexedDB) first. This guarantees
