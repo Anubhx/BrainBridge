@@ -1,0 +1,36 @@
+{
+  "name": "BrainBridge V2 Design System",
+  "version": "2.0.0",
+  "tokens": {
+    "colors": {
+      "bg-base": "#1C1B1A",
+      "bg-surface": "#252422",
+      "border-default": "#383633",
+      "border-hover": "#4A4743",
+      "accent-amber": "#E8A33D",
+      "accent-blue": "#5B9BD5",
+      "accent-purple": "#9B7ED4",
+      "status-done": "#5FA8A0",
+      "status-error": "#D9534F",
+      "status-processing": "#F59E0B",
+      "text-primary": "#E8E4DF",
+      "text-muted": "#9A948E"
+    },
+    "typography": {
+      "mono-label": { "fontFamily": "JetBrains Mono", "fontSize": "10px", "fontWeight": 500, "letterSpacing": "0.08em" },
+      "mono-body": { "fontFamily": "JetBrains Mono", "fontSize": "12px", "fontWeight": 400 },
+      "sans-body": { "fontFamily": "Inter", "fontSize": "13.5px", "fontWeight": 400, "lineHeight": 1.6 },
+      "sans-ui": { "fontFamily": "Inter", "fontSize": "13px", "fontWeight": 500 },
+      "sans-large": { "fontFamily": "Inter", "fontSize": "16px", "fontWeight": 600 }
+    },
+    "spacing": {
+      "scale": [4, 8, 12, 16, 24, 32, 48],
+      "chipPadding": "2px 6px",
+      "tabPadding": "5px 14px",
+      "cardPadding": "12px 14px 12px 18px"
+    },
+    "radius": {
+      "default": "2px"
+    }
+  }
+}

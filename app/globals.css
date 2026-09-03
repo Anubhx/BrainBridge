@@ -317,16 +317,46 @@ body {
   border-left-color: var(--amber);
 }
 
+@keyframes bb-pulse-border {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+@keyframes bb-error-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  50% { transform: translateX(4px); }
+  75% { transform: translateX(-4px); }
+}
+
+@keyframes bb-item-appear {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .bb-stream-item--processing {
   border-left-color: #F59E0B;
+  animation: bb-pulse-border 1s ease-in-out infinite;
 }
 
 .bb-stream-item--done {
   border-left-color: var(--teal);
+  transition: border-left-color 300ms ease;
 }
 
 .bb-stream-item--error {
   border-left-color: var(--red);
+  animation: bb-error-shake 300ms ease;
+}
+
+.bb-stream-item-new {
+  animation: bb-item-appear 200ms ease-out;
 }
 
 .bb-stream-meta {
