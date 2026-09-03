@@ -10,11 +10,14 @@
 !.yarn/releases
 !.yarn/versions 
 
-# agent tooling & non-project folders
-/.agents
-/skills
-/.dump
-anti-slop/
+# agent tooling & non-project files/folders
+/.agents/
+/skills/
+/.dump/
+/anti-slop/
+/CLAUDE.md
+/N8N_WORKFLOW_SPEC.md
+/BrainBridge - Enrichment Pipeline.json
 
 # testing
 /coverage
