@@ -26,16 +26,16 @@ export function NavBar() {
     <>
       {offline && (
         <div className="bb-offline-banner" role="status" aria-live="polite">
-          ✈ Offline — captures saved locally, sync on reconnect
+          ✈ Offline: captures saved locally, sync on reconnect
         </div>
       )}
       <header className="bb-header">
         <div style={{ maxWidth: "720px", margin: "0 auto", padding: "0 1.5rem", width: "100%" }}>
-          <nav className="bb-nav">
+          <nav className="bb-nav" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "0.5rem" }}>
             <Link href="/dashboard" className="bb-brand" style={{ textDecoration: "none" }}>
               BRAINBRIDGE
             </Link>
-            <div className="bb-nav-links" style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <div className="bb-nav-links" style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
               <Link
                 href="/dashboard"
                 className={`bb-nav-link${path === "/dashboard" ? " bb-nav-link--active" : ""}`}

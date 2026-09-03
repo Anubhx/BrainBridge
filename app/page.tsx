@@ -104,8 +104,8 @@ export default function LandingPage() {
         </h1>
 
         <p className="bb-landing-desc">
-          BrainBridge is a second-brain capture tool. Type a raw idea — quick,
-          deep, or research-grade — and a multi-agent AI pipeline turns it into
+          BrainBridge is a second-brain capture tool. Type a raw idea (quick,
+          deep, or research-grade) and a multi-agent AI pipeline turns it into
           structured knowledge in your Notion workspace.
         </p>
 
@@ -133,7 +133,7 @@ export default function LandingPage() {
             <div>
               <div className="bb-landing-feature-title">3 Depth Modes</div>
               <div className="bb-landing-feature-desc">
-                Quick capture, Deep analysis, or full Research reports — choose
+                Quick capture, Deep analysis, or full Research reports: choose
                 per note.
               </div>
             </div>
@@ -153,7 +153,7 @@ export default function LandingPage() {
             <div>
               <div className="bb-landing-feature-title">Instagram / URL Aware</div>
               <div className="bb-landing-feature-desc">
-                Paste a reel or article link — AI reads and contextualises the
+                Paste a reel or article link: AI reads and contextualises the
                 content for you.
               </div>
             </div>
@@ -174,7 +174,7 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="bb-landing-footer">
         <span className="bb-mono" style={{ color: "var(--text-dim)", fontSize: "0.72rem" }}>
-          BrainBridge · Personal AI Knowledge System · $0/month
+          BrainBridge | Personal AI Knowledge System | $0/month
         </span>
       </footer>
     </div>

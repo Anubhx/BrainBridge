@@ -7,12 +7,12 @@ import { supabase } from "@/lib/supabase";
 import { db, type Item, type ResearchSection } from "@/lib/db";
 
 const SECTION_COLORS = [
-  "#E8A33D", // 01 Key Points (amber)
-  "#5FA8A0", // 02 Evidence & Context (teal)
-  "#D9534F", // 03 Counterpoints (red)
-  "#5B9BD5", // 04 Related Work (blue)
-  "#9B7ED4", // 05 Practical Applications (purple)
-  "#E8A33D", // 06 Action Items (amber)
+  "var(--amber)",  // 01 Key Points
+  "var(--teal)",   // 02 Evidence & Context
+  "var(--red)",    // 03 Counterpoints
+  "var(--blue)",   // 04 Related Work
+  "var(--purple)", // 05 Practical Applications
+  "var(--amber)",  // 06 Action Items
 ];
 
 function ResearchReportContent() {
@@ -238,6 +238,7 @@ function ResearchReportContent() {
           sections.map((s, idx) => {
             const isExpanded = expanded.has(idx);
             const accentColor = SECTION_COLORS[idx % SECTION_COLORS.length];
+            const panelId = `research-section-panel-${idx}`;
             return (
               <div
                 key={s.id || idx}
@@ -251,6 +252,8 @@ function ResearchReportContent() {
                 <button
                   type="button"
                   onClick={() => toggleSection(idx)}
+                  aria-expanded={isExpanded}
+                  aria-controls={panelId}
                   style={{
                     width: "100%",
                     display: "flex",
@@ -267,7 +270,6 @@ function ResearchReportContent() {
                     textAlign: "left",
                     borderLeft: `3px solid ${accentColor}`,
                   }}
-                  aria-expanded={isExpanded}
                 >
                   <span style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
                     <span className="bb-mono" style={{ fontSize: "0.72rem", color: "var(--text-dim)" }}>
@@ -288,6 +290,9 @@ function ResearchReportContent() {
                 </button>
                 {isExpanded && (
                   <div
+                    id={panelId}
+                    role="region"
+                    aria-label={s.section_title}
                     style={{
                       padding: "1rem",
                       backgroundColor: "#131211",

@@ -9,9 +9,9 @@
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions 
-.agents
-.dump
-
+/.agents
+/.dump
+/.agents
 # testing
 /coverage
 

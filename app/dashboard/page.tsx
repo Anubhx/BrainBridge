@@ -226,7 +226,7 @@ export default function DashboardPage() {
           </div>
         ) : recentItems.length === 0 ? (
           <div className="bb-empty">
-            Nothing captured yet — start typing
+            Nothing captured yet: start typing
           </div>
         ) : (
           <div className="bb-stream">

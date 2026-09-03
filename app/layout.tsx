@@ -17,9 +17,9 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "BrainBridge — Personal AI Knowledge System",
+  title: "BrainBridge | Personal AI Knowledge System",
   description:
-    "Capture thoughts instantly. Enrich them with multi-agent AI. Your personal second brain — offline-first PWA.",
+    "Capture thoughts instantly. Enrich them with multi-agent AI. Your personal second brain: offline-first PWA.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,

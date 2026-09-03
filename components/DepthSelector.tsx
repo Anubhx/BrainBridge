@@ -19,21 +19,21 @@ const DEPTH_CONFIG: {
     label: "QUICK",
     color: "#E8A33D",
     bg: "rgba(232, 163, 61, 0.10)",
-    tooltip: "1-sentence summary, 3 tags — fast single AI call",
+    tooltip: "1-sentence summary, 3 tags: fast single AI call",
   },
   {
     id: "deep",
     label: "DEEP",
     color: "#5B9BD5",
     bg: "rgba(91, 155, 213, 0.10)",
-    tooltip: "Full summary, key concepts, links — Gemini + Mistral",
+    tooltip: "Full summary, key concepts, links: Gemini + Mistral",
   },
   {
     id: "research",
     label: "RESEARCH",
     color: "#9B7ED4",
     bg: "rgba(155, 126, 212, 0.10)",
-    tooltip: "6-section structured report — Gemini + Llama + Mistral",
+    tooltip: "6-section structured report: Gemini + Llama + Mistral",
   },
 ];
 
@@ -72,6 +72,13 @@ export function DepthSelector({ value, onChange }: DepthSelectorProps) {
               color: isActive ? d.color : "#9A948E",
               cursor: "pointer",
               transition: "all 150ms ease",
+              outline: "none",
+            }}
+            onFocus={(e) => {
+              e.currentTarget.style.outline = `2px solid ${d.color}`;
+            }}
+            onBlur={(e) => {
+              e.currentTarget.style.outline = "none";
             }}
           >
             [{d.label}]
