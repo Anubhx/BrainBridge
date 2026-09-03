@@ -11,9 +11,9 @@
 !.yarn/versions 
 
 # agent tooling & non-project folders
-.agents/
-skills/
-.dump/
+/.agents
+/skills
+/.dump
 anti-slop/
 
 # testing
