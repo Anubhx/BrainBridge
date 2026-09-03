@@ -35,16 +35,19 @@ function Toast({ message, onDone }: { message: string; onDone: () => void }) {
 export default function DashboardPage() {
   const { user } = useUser();
   const [inputValue, setInputValue] = useState("");
-  const [depth, setDepth] = useState<Depth>(() => {
-    if (typeof window !== "undefined") {
-      return (sessionStorage.getItem("bb-depth") as Depth) || "quick";
-    }
-    return "quick";
-  });
+  const [depth, setDepth] = useState<Depth>("quick");
   const [saving, setSaving] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Read stored depth from sessionStorage after client hydration mount
+  useEffect(() => {
+    const saved = sessionStorage.getItem("bb-depth") as Depth | null;
+    if (saved && (saved === "quick" || saved === "deep" || saved === "research")) {
+      setDepth(saved);
+    }
+  }, []);
 
   // Live query: react to DB changes automatically
   const recentItems = useLiveQuery(
