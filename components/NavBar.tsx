@@ -3,15 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
-import { useClerk, useUser } from "@clerk/nextjs";
-import { useRouter } from "next/navigation";
+import { useUser, UserButton, SignInButton } from "@clerk/nextjs";
 
 export function NavBar() {
   const path = usePathname();
   const [offline, setOffline] = useState(false);
-  const { signOut } = useClerk();
-  const { user } = useUser();
-  const router = useRouter();
+  const { isSignedIn, isLoaded } = useUser();
 
   useEffect(() => {
     setOffline(!navigator.onLine);
@@ -24,11 +21,6 @@ export function NavBar() {
       window.removeEventListener("offline", off);
     };
   }, []);
-
-  const handleSignOut = async () => {
-    await signOut();
-    router.push("/");
-  };
 
   return (
     <>
@@ -43,7 +35,7 @@ export function NavBar() {
             <Link href="/dashboard" className="bb-brand" style={{ textDecoration: "none" }}>
               BRAINBRIDGE
             </Link>
-            <div className="bb-nav-links">
+            <div className="bb-nav-links" style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
               <Link
                 href="/dashboard"
                 className={`bb-nav-link${path === "/dashboard" ? " bb-nav-link--active" : ""}`}
@@ -62,15 +54,19 @@ export function NavBar() {
               >
                 SETTINGS
               </Link>
-              {user && (
-                <button
-                  onClick={handleSignOut}
-                  className="bb-nav-link"
-                  style={{ background: "none", border: "none", cursor: "pointer" }}
-                  title={`Signed in as ${user.primaryEmailAddress?.emailAddress}`}
-                >
-                  EXIT
-                </button>
+
+              {isLoaded && isSignedIn && (
+                <div style={{ marginLeft: "0.25rem", display: "flex", alignItems: "center" }}>
+                  <UserButton />
+                </div>
+              )}
+
+              {isLoaded && !isSignedIn && (
+                <SignInButton mode="modal">
+                  <button className="bb-btn bb-btn-ghost" style={{ padding: "0.25rem 0.6rem", fontSize: "0.75rem" }}>
+                    SIGN IN
+                  </button>
+                </SignInButton>
               )}
             </div>
           </nav>

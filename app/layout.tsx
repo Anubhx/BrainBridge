@@ -49,14 +49,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <ClerkProvider>
-      <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`}>
-        <body>
-          <AuthNavWrapper>
-            {children}
-          </AuthNavWrapper>
-        </body>
-      </html>
-    </ClerkProvider>
+    <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`}>
+      <body>
+        <ClerkProvider>
+          <AuthNavWrapper>{children}</AuthNavWrapper>
+        </ClerkProvider>
+      </body>
+    </html>
   );
 }
