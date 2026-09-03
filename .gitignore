@@ -9,9 +9,13 @@
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions 
-/.agents
-/.dump
-/.agents
+
+# agent tooling & non-project folders
+.agents/
+skills/
+.dump/
+anti-slop/
+
 # testing
 /coverage
 
