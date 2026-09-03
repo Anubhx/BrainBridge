@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { useEffect, useRef } from "react";
+import { useUser, UserButton } from "@clerk/nextjs";
 
 export default function LandingPage() {
+  const { isSignedIn, isLoaded } = useUser();
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   // Subtle animated grid background
@@ -65,13 +67,24 @@ export default function LandingPage() {
       {/* Nav */}
       <header className="bb-landing-nav">
         <span className="bb-brand">BrainBridge</span>
-        <div className="bb-landing-nav-actions">
-          <Link href="/sign-in" className="bb-btn bb-btn-ghost">
-            Sign In
-          </Link>
-          <Link href="/sign-up" className="bb-btn bb-btn-primary">
-            Get Started
-          </Link>
+        <div className="bb-landing-nav-actions" style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+          {isLoaded && isSignedIn ? (
+            <>
+              <Link href="/dashboard" className="bb-btn bb-btn-primary">
+                Go to Dashboard
+              </Link>
+              <UserButton />
+            </>
+          ) : (
+            <>
+              <Link href="/sign-in" className="bb-btn bb-btn-ghost">
+                Sign In
+              </Link>
+              <Link href="/sign-up" className="bb-btn bb-btn-primary">
+                Get Started
+              </Link>
+            </>
+          )}
         </div>
       </header>
 
@@ -97,12 +110,20 @@ export default function LandingPage() {
         </p>
 
         <div className="bb-landing-cta">
-          <Link href="/sign-up" className="bb-btn bb-btn-primary bb-btn-lg">
-            Open Your Second Brain →
-          </Link>
-          <Link href="/sign-in" className="bb-btn bb-btn-ghost">
-            Already have an account
-          </Link>
+          {isLoaded && isSignedIn ? (
+            <Link href="/dashboard" className="bb-btn bb-btn-primary bb-btn-lg">
+              Go to Dashboard →
+            </Link>
+          ) : (
+            <>
+              <Link href="/sign-up" className="bb-btn bb-btn-primary bb-btn-lg">
+                Open Your Second Brain →
+              </Link>
+              <Link href="/sign-in" className="bb-btn bb-btn-ghost">
+                Already have an account
+              </Link>
+            </>
+          )}
         </div>
 
         {/* Feature grid */}
