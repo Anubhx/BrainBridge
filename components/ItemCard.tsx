@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { StatusBadge } from "./StatusBadge";
-import type { Item } from "@/lib/db";
+import type { Item, Depth } from "@/lib/db";
 
 interface ItemCardProps {
   item: Item;
@@ -11,6 +12,18 @@ interface ItemCardProps {
   onMarkDone?: (id: string) => void;
   showActions?: boolean;
 }
+
+const DEPTH_STYLE: Record<Depth, { label: string; color: string; bg: string }> = {
+  quick: { label: "QUICK", color: "#E8A33D", bg: "rgba(232, 163, 61, 0.08)" },
+  deep: { label: "DEEP", color: "#5B9BD5", bg: "rgba(91, 155, 213, 0.08)" },
+  research: { label: "RESEARCH", color: "#9B7ED4", bg: "rgba(155, 126, 212, 0.08)" },
+};
+
+const PROCESSING_HINTS: Record<Depth, string> = {
+  quick: "⟳ Gemini Flash-Lite",
+  deep: "⟳ Gemini → Mistral-7B",
+  research: "⟳ Gemini → Llama-3B → Mistral-7B",
+};
 
 /** Format timestamp into precise technical mono format (e.g. "14:20 • 2m ago") */
 function formatTime(isoString: string): string {
@@ -21,10 +34,10 @@ function formatTime(isoString: string): string {
 
   const diff = Date.now() - d.getTime();
   const diffMins = Math.floor(diff / 60_000);
-  if (diffMins < 1)  return `${timeStr} • just now`;
+  if (diffMins < 1) return `${timeStr} • just now`;
   if (diffMins < 60) return `${timeStr} • ${diffMins}m ago`;
   const hrs = Math.floor(diffMins / 60);
-  if (hrs < 24)  return `${timeStr} • ${hrs}h ago`;
+  if (hrs < 24) return `${timeStr} • ${hrs}h ago`;
   const days = Math.floor(hrs / 24);
   return `${timeStr} • ${days}d ago`;
 }
@@ -37,36 +50,90 @@ export function ItemCard({
   showActions = true,
 }: ItemCardProps) {
   const [expanded, setExpanded] = useState(false);
-  const hasEnrichment = item.status === "done" && (item.enriched_summary || item.enriched_links);
+  const hasEnrichment =
+    item.status === "done" && (item.enriched_summary || item.enriched_links);
+  const itemDepth = item.depth || "quick";
+  const depthInfo = DEPTH_STYLE[itemDepth];
 
   return (
     <article className={`bb-stream-item bb-stream-item--${item.status}`}>
       {/* Metadata Bar: Monospace System Log Header */}
       <div className="bb-stream-meta">
-        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-          <time dateTime={item.created_at} className="bb-mono" style={{ color: "var(--text-dim)", fontSize: "0.72rem" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
+          {/* Depth Badge */}
+          <span
+            className="bb-mono"
+            style={{
+              fontSize: "0.65rem",
+              fontWeight: 600,
+              padding: "0.1rem 0.35rem",
+              borderRadius: "2px",
+              color: depthInfo.color,
+              backgroundColor: depthInfo.bg,
+              border: `1px solid ${depthInfo.color}`,
+              letterSpacing: "0.06em",
+            }}
+          >
+            {depthInfo.label}
+          </span>
+
+          <StatusBadge status={item.status} />
+
+          {/* Processing agent pipeline hint */}
+          {(item.status === "processing" || item.status === "ready_to_process") && (
+            <span className="bb-mono" style={{ fontSize: "0.68rem", color: "#F59E0B" }}>
+              {PROCESSING_HINTS[itemDepth]}
+            </span>
+          )}
+
+          {/* Model Primary / Fallback chip */}
+          {item.model_primary && item.status === "done" && (
+            <span className="bb-mono" style={{ fontSize: "0.68rem", color: "var(--text-dim)" }}>
+              [{item.model_primary}{item.model_fallback ? ` → ${item.model_fallback}` : ""}]
+            </span>
+          )}
+
+          <time dateTime={item.created_at} className="bb-mono" style={{ color: "var(--text-dim)", fontSize: "0.72rem", marginLeft: "auto" }}>
             {formatTime(item.created_at)}
           </time>
-          <StatusBadge status={item.status} />
         </div>
 
         {hasEnrichment && (
-          <button
-            onClick={() => setExpanded((e) => !e)}
-            className="bb-btn bb-btn-ghost"
-            style={{
-              padding: "0.15rem 0.4rem",
-              fontSize: "0.7rem",
-              color: "var(--teal)",
-            }}
-            aria-expanded={expanded}
-          >
-            {expanded ? "[ COLLAPSE SYSTEM KNOWLEDGE ▲ ]" : "[ VIEW ENRICHED KNOWLEDGE ▼ ]"}
-          </button>
+          <div style={{ marginTop: "0.35rem", display: "flex", alignItems: "center", gap: "0.5rem", justifyContent: "space-between" }}>
+            <button
+              onClick={() => setExpanded((e) => !e)}
+              className="bb-btn bb-btn-ghost"
+              style={{
+                padding: "0.15rem 0.4rem",
+                fontSize: "0.7rem",
+                color: "var(--teal)",
+              }}
+              aria-expanded={expanded}
+            >
+              {expanded ? "[ COLLAPSE KNOWLEDGE ▲ ]" : "[ VIEW ENRICHED KNOWLEDGE ▼ ]"}
+            </button>
+
+            {itemDepth === "research" && (
+              <Link
+                href={`/research?id=${item.id}`}
+                className="bb-btn bb-btn-primary"
+                style={{
+                  fontSize: "0.7rem",
+                  padding: "0.15rem 0.45rem",
+                  textDecoration: "none",
+                  backgroundColor: "rgba(155, 126, 212, 0.15)",
+                  borderColor: "#9B7ED4",
+                  color: "#9B7ED4",
+                }}
+              >
+                VIEW REPORT →
+              </Link>
+            )}
+          </div>
         )}
       </div>
 
-      {/* Raw Thought Content: Clean Humanist Sans */}
+      {/* Raw Thought Content */}
       <div
         className="bb-stream-content"
         onClick={() => hasEnrichment && setExpanded((e) => !e)}
@@ -78,11 +145,11 @@ export function ItemCard({
       {/* Error Output */}
       {item.status === "error" && item.error_message && (
         <div className="bb-mono" style={{ fontSize: "0.75rem", color: "var(--red)", marginTop: "0.4rem" }}>
-          ERR: {item.error_message}
+          ERR: {item.error_message} {item.retry_count ? `(RETRIED ${item.retry_count}x)` : ""}
         </div>
       )}
 
-      {/* Enriched Knowledge Block (Monospace + Sans Structured Layout) */}
+      {/* Enriched Knowledge Block */}
       {hasEnrichment && expanded && (
         <div className="bb-enrichment">
           {item.enriched_summary && (
@@ -94,8 +161,37 @@ export function ItemCard({
             </div>
           )}
 
+          {/* Key concepts chips (Deep & Research items) */}
+          {item.key_concepts && item.key_concepts.length > 0 && (
+            <div style={{ marginTop: "0.4rem" }}>
+              <div className="bb-mono" style={{ fontSize: "0.68rem", color: "var(--text-dim)", textTransform: "uppercase", marginBottom: "0.2rem" }}>
+                // KEY CONCEPTS
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "0.3rem" }}>
+                {item.key_concepts.map((kc) => (
+                  <span
+                    key={kc}
+                    className="bb-mono"
+                    style={{
+                      fontSize: "0.68rem",
+                      color: "#5B9BD5",
+                      borderColor: "#5B9BD5",
+                      backgroundColor: "rgba(91, 155, 213, 0.08)",
+                      borderWidth: "1px",
+                      borderStyle: "solid",
+                      borderRadius: "2px",
+                      padding: "0.1rem 0.35rem",
+                    }}
+                  >
+                    {kc}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
           {item.tags && item.tags.length > 0 && (
-            <div className="bb-tags">
+            <div className="bb-tags" style={{ marginTop: "0.4rem" }}>
               {item.tags.map((t) => (
                 <span key={t} className="bb-tag">#{t}</span>
               ))}
@@ -122,7 +218,7 @@ export function ItemCard({
           )}
 
           {item.notion_page_id && (
-            <div style={{ marginTop: "0.2rem" }}>
+            <div style={{ marginTop: "0.3rem" }}>
               <a
                 href={`https://notion.so/${item.notion_page_id.replace(/-/g, "")}`}
                 className="bb-enrichment-link"

@@ -1,5 +1,5 @@
 /**
- * lib/db.ts - Dexie.js IndexedDB wrapper
+ * lib/db.ts - Dexie.js IndexedDB wrapper (V2 Schema)
  *
  * This mirrors the Supabase `items` table exactly so rows can be
  * synced bidirectionally. One extra field `synced` tracks whether
@@ -15,9 +15,20 @@ export type ItemStatus =
   | "done"
   | "error";
 
+export type Depth = "quick" | "deep" | "research";
+
 export interface EnrichedLink {
   title: string;
   url: string;
+}
+
+export interface ResearchSection {
+  id?: string;
+  item_id?: string;
+  section_order: number;
+  section_title: string;
+  section_content: string;
+  model_used?: string;
 }
 
 export interface Item {
@@ -27,10 +38,16 @@ export interface Item {
   created_at: string; // ISO 8601
   updated_at: string; // ISO 8601
   status: ItemStatus;
+  depth: Depth;
   process_code: string | null;
   enriched_summary: string | null;
   enriched_links: EnrichedLink[] | null;
   tags: string[] | null;
+  key_concepts: string[] | null;
+  model_primary: string | null;
+  model_fallback: string | null;
+  retry_count?: number;
+  sections?: ResearchSection[] | null;
   notion_page_id: string | null;
   error_message: string | null;
   source: string;
@@ -45,8 +62,11 @@ class BrainBridgeDB extends Dexie {
     super("brainbridge");
 
     this.version(1).stores({
-      // Only index the fields we query/sort on. Dexie auto-indexes by primary key.
       items: "id, status, created_at, process_code",
+    });
+
+    this.version(2).stores({
+      items: "id, status, created_at, process_code, depth",
     });
   }
 }
@@ -56,7 +76,10 @@ export const db = new BrainBridgeDB();
 // ─── Helper queries ──────────────────────────────────────────────────────────
 
 /** Create a new item and save it locally (offline-safe). */
-export async function createItem(content: string): Promise<Item> {
+export async function createItem(
+  content: string,
+  depth: Depth = "quick"
+): Promise<Item> {
   const now = new Date().toISOString();
   const item: Item = {
     id: crypto.randomUUID(),
@@ -64,10 +87,16 @@ export async function createItem(content: string): Promise<Item> {
     created_at: now,
     updated_at: now,
     status: "pending",
+    depth,
     process_code: null,
     enriched_summary: null,
     enriched_links: null,
     tags: null,
+    key_concepts: null,
+    model_primary: null,
+    model_fallback: null,
+    retry_count: 0,
+    sections: null,
     notion_page_id: null,
     error_message: null,
     source: "pwa",

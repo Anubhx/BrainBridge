@@ -1,20 +1,22 @@
 "use client";
 
 /**
- * app/dashboard/page.tsx - Capture workspace (protected route)
+ * app/dashboard/page.tsx - Capture workspace (protected route V2)
  * 
- * The core BrainBridge capture UI — moved from / to /dashboard
- * post Clerk auth integration. Identical to V1 capture UI.
+ * The core BrainBridge capture UI with DepthSelector (Quick, Deep, Research)
+ * and multi-agent background enrichment.
  */
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { ItemCard } from "@/components/ItemCard";
+import { DepthSelector } from "@/components/DepthSelector";
 import {
   createItem,
   getRecentItems,
   updateItem,
   deleteItem,
   type Item,
+  type Depth,
 } from "@/lib/db";
 import { syncToSupabase, syncItemNow } from "@/lib/sync";
 import { processNow } from "@/lib/process";
@@ -33,6 +35,12 @@ function Toast({ message, onDone }: { message: string; onDone: () => void }) {
 export default function DashboardPage() {
   const { user } = useUser();
   const [inputValue, setInputValue] = useState("");
+  const [depth, setDepth] = useState<Depth>(() => {
+    if (typeof window !== "undefined") {
+      return (sessionStorage.getItem("bb-depth") as Depth) || "quick";
+    }
+    return "quick";
+  });
   const [saving, setSaving] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
@@ -53,6 +61,13 @@ export default function DashboardPage() {
     textareaRef.current?.focus();
   }, []);
 
+  const handleDepthChange = (newDepth: Depth) => {
+    setDepth(newDepth);
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem("bb-depth", newDepth);
+    }
+  };
+
   const showToast = (msg: string) => setToast(msg);
 
   /** Save item - optimistic: IndexedDB first, then sync to Supabase */
@@ -64,7 +79,7 @@ export default function DashboardPage() {
     setInputValue("");
 
     try {
-      const item = await createItem(content);
+      const item = await createItem(content, depth);
       void syncItemNow(item).catch(() => void syncToSupabase());
     } catch (err) {
       console.error("[BrainBridge] Save error:", err);
@@ -73,7 +88,7 @@ export default function DashboardPage() {
       setSaving(false);
       textareaRef.current?.focus();
     }
-  }, [inputValue, saving]);
+  }, [inputValue, depth, saving]);
 
   /** Enter (without Shift) triggers save */
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -139,12 +154,15 @@ export default function DashboardPage() {
 
       {/* Scratchpad Capture Notes Widget */}
       <section className="bb-notes-area">
+        {/* Depth Mode Pills */}
+        <DepthSelector value={depth} onChange={handleDepthChange} />
+
         <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", marginBottom: "0.6rem" }}>
           <span className="bb-mono" style={{ color: "var(--amber)", fontSize: "0.85rem", fontWeight: 700 }}>
             &gt;
           </span>
           <span className="bb-mono" style={{ color: "var(--text-muted)", fontSize: "0.75rem", letterSpacing: "0.04em", fontWeight: 600 }}>
-            CAPTURE RAW THOUGHT
+            CAPTURE RAW THOUGHT [{depth.toUpperCase()}]
           </span>
           <span className="bb-cursor" />
         </div>
@@ -173,7 +191,7 @@ export default function DashboardPage() {
             disabled={saving || !inputValue.trim()}
             id="save-btn"
           >
-            {saving ? <span className="bb-spinner" /> : "SAVE"}
+            {saving ? <span className="bb-spinner" /> : `SAVE [${depth.toUpperCase()}]`}
           </button>
         </div>
       </section>

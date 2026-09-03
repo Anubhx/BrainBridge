@@ -1,10 +1,11 @@
 "use client";
 
 /**
- * app/history/page.tsx - History / Log Archive screen
+ * app/history/page.tsx - History / Log Archive screen (V2 Pipeline)
  *
  * Technical Scratchpad Archive:
- *  - Monospace filter chips (ALL, PENDING, ENRICHED, ERROR)
+ *  - Status filter chips (ALL, PENDING, ENRICHED, ERROR)
+ *  - Depth filter chips (ALL, QUICK, DEEP, RESEARCH)
  *  - Monospace search field
  *  - Stream / Log list
  */
@@ -12,21 +13,30 @@
 import { useState, useMemo } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { ItemCard } from "@/components/ItemCard";
-import { db, updateItem, deleteItem, type Item, type ItemStatus } from "@/lib/db";
+import { db, updateItem, deleteItem, type Item, type ItemStatus, type Depth } from "@/lib/db";
 import { syncToSupabase } from "@/lib/sync";
 import { retryFailed } from "@/lib/process";
 
-type FilterChip = "all" | "pending" | "done" | "error";
+type StatusFilterChip = "all" | "pending" | "done" | "error";
+type DepthFilterChip = "all" | Depth;
 
-const CHIPS: { label: string; value: FilterChip }[] = [
-  { label: "ALL", value: "all" },
+const STATUS_CHIPS: { label: string; value: StatusFilterChip }[] = [
+  { label: "ALL STATUS", value: "all" },
   { label: "PENDING", value: "pending" },
   { label: "ENRICHED", value: "done" },
   { label: "ERROR", value: "error" },
 ];
 
+const DEPTH_CHIPS: { label: string; value: DepthFilterChip; color: string }[] = [
+  { label: "ALL DEPTHS", value: "all", color: "var(--text-muted)" },
+  { label: "QUICK", value: "quick", color: "#E8A33D" },
+  { label: "DEEP", value: "deep", color: "#5B9BD5" },
+  { label: "RESEARCH", value: "research", color: "#9B7ED4" },
+];
+
 export default function HistoryPage() {
-  const [filter, setFilter] = useState<FilterChip>("all");
+  const [statusFilter, setStatusFilter] = useState<StatusFilterChip>("all");
+  const [depthFilter, setDepthFilter] = useState<DepthFilterChip>("all");
   const [search, setSearch] = useState("");
 
   const allItems = useLiveQuery(
@@ -39,18 +49,21 @@ export default function HistoryPage() {
     if (!allItems) return [];
     return allItems.filter((item) => {
       const statusMatch =
-        filter === "all" ||
-        (filter === "pending" &&
+        statusFilter === "all" ||
+        (statusFilter === "pending" &&
           (item.status === "pending" || item.status === "ready_to_process" || item.status === "processing")) ||
-        item.status === filter;
+        item.status === statusFilter;
+
+      const itemDepth = item.depth || "quick";
+      const depthMatch = depthFilter === "all" || itemDepth === depthFilter;
 
       const searchMatch =
         !search.trim() ||
         item.content.toLowerCase().includes(search.trim().toLowerCase());
 
-      return statusMatch && searchMatch;
+      return statusMatch && depthMatch && searchMatch;
     });
-  }, [allItems, filter, search]);
+  }, [allItems, statusFilter, depthFilter, search]);
 
   const errorCount = allItems?.filter((i) => i.status === "error").length ?? 0;
 
@@ -90,25 +103,25 @@ export default function HistoryPage() {
           aria-label="Search items"
         />
 
-        {/* Filter chips */}
+        {/* Row 1: Status filter chips */}
         <div
           className="bb-chip-group"
           style={{ marginTop: "0.875rem" }}
           role="group"
           aria-label="Filter by status"
         >
-          {CHIPS.map(({ label, value }) => (
+          {STATUS_CHIPS.map(({ label, value }) => (
             <button
               key={value}
-              className={`bb-chip${filter === value ? " bb-chip--active" : ""}`}
-              onClick={() => setFilter(value)}
-              aria-pressed={filter === value}
+              className={`bb-chip${statusFilter === value ? " bb-chip--active" : ""}`}
+              onClick={() => setStatusFilter(value)}
+              aria-pressed={statusFilter === value}
             >
               [{label}]
             </button>
           ))}
 
-          {errorCount > 0 && filter !== "error" && (
+          {errorCount > 0 && statusFilter !== "error" && (
             <span
               className="bb-mono"
               style={{
@@ -121,6 +134,40 @@ export default function HistoryPage() {
               [{errorCount} ERRORS]
             </span>
           )}
+        </div>
+
+        {/* Row 2: Depth filter chips */}
+        <div
+          className="bb-chip-group"
+          style={{ marginTop: "0.5rem" }}
+          role="group"
+          aria-label="Filter by depth"
+        >
+          {DEPTH_CHIPS.map(({ label, value, color }) => {
+            const isActive = depthFilter === value;
+            return (
+              <button
+                key={value}
+                type="button"
+                className="bb-mono"
+                style={{
+                  fontSize: "10px",
+                  fontWeight: 500,
+                  padding: "3px 10px",
+                  borderRadius: "2px",
+                  border: `1px solid ${isActive ? color : "#383633"}`,
+                  background: isActive ? "rgba(255,255,255,0.04)" : "transparent",
+                  color: isActive ? color : "#9A948E",
+                  cursor: "pointer",
+                  transition: "all 150ms ease",
+                }}
+                onClick={() => setDepthFilter(value)}
+                aria-pressed={isActive}
+              >
+                [{label}]
+              </button>
+            );
+          })}
         </div>
 
         {/* Retry all errors shortcut */}
@@ -148,9 +195,9 @@ export default function HistoryPage() {
           <div className="bb-empty">
             {search.trim()
               ? `NO ENTRIES MATCHING "${search.toUpperCase()}"`
-              : filter === "all"
+              : statusFilter === "all" && depthFilter === "all"
                 ? "NO LOG ENTRIES YET"
-                : `NO ${filter.toUpperCase()} ENTRIES`}
+                : `NO MATCHING ENTRIES FOR SELECTED FILTERS`}
           </div>
         ) : (
           <div className="bb-stream">

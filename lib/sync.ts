@@ -1,14 +1,10 @@
 /**
- * lib/sync.ts - Background sync: IndexedDB → Supabase
+ * lib/sync.ts - Background sync: IndexedDB → Supabase (V2 Pipeline)
  *
  * Design:
  *  - Items are always written to Dexie (IndexedDB) first. This guarantees
  *    zero data loss even when offline.
  *  - syncToSupabase() reads all rows where synced=false and upserts them.
- *  - It is called:
- *      1. On app mount (in the root layout via useSyncOnMount hook).
- *      2. When the browser fires the "online" event.
- *      3. Immediately after saving a new item (best-effort live sync).
  *  - Supabase updates (status changes from n8n) are pulled back into Dexie
  *    via pollSupabaseUpdates().
  */
@@ -33,9 +29,10 @@ export async function syncToSupabase(): Promise<void> {
     if (unsynced.length === 0) return;
 
     for (const item of unsynced) {
-      // Strip the local-only `synced` field before sending
-      const { synced: _synced, ...row } = item;
-      void _synced; // suppress unused-var lint
+      // Strip local-only `synced` and optional client-only `sections` before sending
+      const { synced: _synced, sections: _sections, ...row } = item;
+      void _synced;
+      void _sections;
 
       const { error } = await supabase.from("items").upsert(row, {
         onConflict: "id",
@@ -78,7 +75,7 @@ export async function pollSupabaseUpdates(): Promise<void> {
     const { data, error } = await supabase
       .from("items")
       .select(
-        "id, status, enriched_summary, enriched_links, tags, notion_page_id, error_message, process_code, updated_at"
+        "id, status, depth, enriched_summary, enriched_links, tags, key_concepts, model_primary, model_fallback, retry_count, notion_page_id, error_message, process_code, updated_at"
       )
       .in("id", ids);
 
@@ -87,9 +84,14 @@ export async function pollSupabaseUpdates(): Promise<void> {
     for (const row of data) {
       await updateItem(row.id, {
         status: row.status,
+        depth: row.depth ?? "quick",
         enriched_summary: row.enriched_summary,
         enriched_links: row.enriched_links,
         tags: row.tags,
+        key_concepts: row.key_concepts,
+        model_primary: row.model_primary,
+        model_fallback: row.model_fallback,
+        retry_count: row.retry_count ?? 0,
         notion_page_id: row.notion_page_id,
         error_message: row.error_message,
         process_code: row.process_code,
@@ -108,8 +110,9 @@ export async function pollSupabaseUpdates(): Promise<void> {
  */
 export async function syncItemNow(item: Item): Promise<boolean> {
   if (!navigator.onLine) return false;
-  const { synced: _synced, ...row } = item;
+  const { synced: _synced, sections: _sections, ...row } = item;
   void _synced;
+  void _sections;
 
   const { error } = await supabase.from("items").upsert(row, {
     onConflict: "id",
